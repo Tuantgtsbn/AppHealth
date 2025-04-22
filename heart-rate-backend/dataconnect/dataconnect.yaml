@@ -1,0 +1,12 @@
+specVersion: "v1"
+serviceId: "heart-rate-backend"
+location: "us-central1"
+schema:
+  source: "./schema"
+  datasource:
+    postgresql:
+      database: "fdcdb"
+      cloudSql:
+        instanceId: "heart-rate-backend-fdc"
+      # schemaValidation: "COMPATIBLE"
+connectorDirs: ["./connector"]
