@@ -2,22 +2,30 @@ import Card from '@/components/ui/Card';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import Feather from '@expo/vector-icons/Feather';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-
+import { useSelector } from 'react-redux';
+import { RootState } from '@/redux/store';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 const ProfileScreen = ({ navigation }) => {
+    const { dateOfBirth, weight, height, nameDisplay, email } = useSelector(
+        (state: RootState) => state.user.detailUser
+    );
+
     const dataMetrics = [
         {
             name: 'Chiều cao',
-            value: '160cm'
+            value: height ? height.value + ' ' + height.unit : '0 cm'
         },
         {
             name: 'Cân nặng',
-            value: '50kg'
+            value: weight ? weight.value + ' ' + weight.unit : '0 kg'
         },
         {
             name: 'Tuổi',
-            value: '22'
+            value:
+                new Date().getFullYear() -
+                    new Date(dateOfBirth).getFullYear() || 1
         }
     ];
     const handleNavigateEditProfile = () => {
@@ -29,9 +37,12 @@ const ProfileScreen = ({ navigation }) => {
     const handleNavigateNotificationSetting = () => {
         navigation.navigate('NotificationSetting');
     };
+    const handleNavigateManageThreshold = () => {
+        navigation.navigate('ManageThreshold');
+    };
     return (
         <View className='flex-1 px-[30px] bg-white'>
-            <Text className='font-bold text-3xl text-center'>
+            <Text className='font-bold text-3xl text-center mt-[10px]'>
                 Hồ sơ cá nhân
             </Text>
             <View className='flex-row justify-between items-center mt-[35px]'>
@@ -40,8 +51,8 @@ const ProfileScreen = ({ navigation }) => {
                         <AntDesign name='user' size={24} color='black' />
                     </View>
                     <View>
-                        <Text className='font-semibold'>Stefani Wong</Text>
-                        <Text>Lose a Fat Program</Text>
+                        <Text className='font-semibold'>{nameDisplay}</Text>
+                        <Text className='text-[10px]'>{email}</Text>
                     </View>
                 </View>
                 <View>
@@ -67,6 +78,31 @@ const ProfileScreen = ({ navigation }) => {
                         <Text>{item.name}</Text>
                     </Card>
                 ))}
+            </View>
+            <View className='mt-[35px]'>
+                <Card>
+                    <Text className='font-bold text-xl'>Thiết bị</Text>
+                    <TouchableOpacity
+                        className='mt-[10px]'
+                        onPress={handleNavigateManageThreshold}
+                    >
+                        <View className='flex-row justify-between'>
+                            <View className='flex-row gap-2'>
+                                <MaterialCommunityIcons
+                                    name='hospital-box-outline'
+                                    size={24}
+                                    color='black'
+                                />
+                                <Text>Ngưỡng cảnh báo</Text>
+                            </View>
+                            <MaterialIcons
+                                name='navigate-next'
+                                size={24}
+                                color='black'
+                            />
+                        </View>
+                    </TouchableOpacity>
+                </Card>
             </View>
             <View className='mt-[35px]'>
                 <Card>

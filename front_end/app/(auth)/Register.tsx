@@ -20,6 +20,9 @@ import * as yup from 'yup';
 import { AuthService } from '@services/auth.service';
 import * as Google from 'expo-auth-session/providers/google';
 import { GoogleAuthProvider } from 'firebase/auth';
+import { useDispatch, useSelector } from 'react-redux';
+import { registerWithEmailPassword } from '@/redux/authSlice';
+import Toast from 'react-native-toast-message';
 const schema = yup.object().shape({
     firstName: yup
         .string()
@@ -48,11 +51,14 @@ type FormData = yup.InferType<typeof schema>;
 const RegisterScreen = ({ navigation }) => {
     const [isShowPassword, setIsShowPassword] = useState(false);
     const [isShowConfirmPassword, setIsShowConfirmPassword] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
+    const dispatch = useDispatch();
+    const { loading } = useSelector((state) => state.auth);
     const [request, response, promptAsync] = Google.useAuthRequest({
         expoClientId:
             '922781130321-due6stlhqo23cnh44blvoi6i3scqp6me.apps.googleusercontent.com',
         androidClientId:
+            '922781130321-due6stlhqo23cnh44blvoi6i3scqp6me.apps.googleusercontent.com',
+        webClientId:
             '922781130321-due6stlhqo23cnh44blvoi6i3scqp6me.apps.googleusercontent.com'
     });
     const {
@@ -73,46 +79,50 @@ const RegisterScreen = ({ navigation }) => {
     const handleLogin = () => {
         navigation.replace('Login');
     };
-    const handleGoogleSignIn = async () => {
-        try {
-            setIsLoading(true);
-            const result = await promptAsync();
+    // const handleGoogleSignIn = async () => {
+    //     try {
+    //         setIsLoading(true);
+    //         const result = await promptAsync();
 
-            if (result?.type === 'success') {
-                const { id_token } = result.params;
-                const credential = GoogleAuthProvider.credential(id_token);
-                await AuthService.signInWithGoogleCredential(credential);
-                navigation.navigate('CompleteProfile');
-            } else {
-                throw new Error('Google sign in was cancelled');
-            }
-        } catch (error: any) {
-            Alert.alert(
-                'Lỗi đăng nhập',
-                error.message || 'Đã có lỗi xảy ra khi đăng nhập bằng Google'
-            );
-        } finally {
-            setIsLoading(false);
-        }
-    };
+    //         if (result?.type === 'success') {
+    //             const { id_token } = result.params;
+    //             const credential = GoogleAuthProvider.credential(id_token);
+    //             await AuthService.signInWithGoogleCredential(credential);
+    //             navigation.navigate('CompleteProfile');
+    //         } else {
+    //             throw new Error('Google sign in was cancelled');
+    //         }
+    //     } catch (error: any) {
+    //         Alert.alert(
+    //             'Lỗi đăng nhập',
+    //             error.message || 'Đã có lỗi xảy ra khi đăng nhập bằng Google'
+    //         );
+    //     } finally {
+    //         setIsLoading(false);
+    //     }
+    // };
     const onSubmit = async (data: FormData) => {
         try {
-            setIsLoading(true);
-            const credentials = {
-                firstName: data.firstName,
-                lastName: data.lastName,
-                email: data.email,
-                password: data.password
-            };
-
-            await AuthService.registerWithEmailAndPassword(credentials);
-            console.log('Đăng ký thành công');
-            Alert.alert('Thành công', 'Đăng ký thành công');
+            await dispatch(
+                registerWithEmailPassword({
+                    firstName: data.firstName,
+                    lastName: data.lastName,
+                    email: data.email,
+                    password: data.password
+                })
+            ).unwrap();
+            Toast.show({
+                type: 'success',
+                text1: 'Thành công',
+                text2: 'Đăng ký thành công'
+            });
             navigation.navigate('CompleteProfile');
-        } catch (error: any) {
-            Alert.alert('Lỗi', error.message);
-        } finally {
-            setIsLoading(false);
+        } catch (error) {
+            Toast.show({
+                type: 'error',
+                text1: 'Lỗi',
+                text2: error
+            });
         }
     };
 
@@ -123,7 +133,7 @@ const RegisterScreen = ({ navigation }) => {
                 <Text className='text-2xl font-bold w-[160px] text-center'>
                     Tạo tài khoản
                 </Text>
-                <View className='gap-4 mt-[40px]'>
+                <View className='gap-4 mt-[40px] mx-[10px]'>
                     <View>
                         <View className='flex-row gap-2 px-2 py-2 bg-[#F7F8F8] rounded-lg w-90 items-center'>
                             <AntDesign name='user' size={24} color='black' />
@@ -299,12 +309,13 @@ const RegisterScreen = ({ navigation }) => {
                     <TouchableOpacity
                         className='bg-primary px-2 py-4 rounded-full mt-4 w-full flex-row gap-4 justify-center'
                         onPress={handleSubmit(onSubmit)}
+                        disabled={loading}
                     >
                         <MaterialIcons name='login' size={24} color='white' />
                         <Text className='text-center text-white font-bold text-xl'>
                             Đăng ký
                         </Text>
-                        {isLoading && <ActivityIndicator color='white' />}
+                        {loading && <ActivityIndicator color='white' />}
                     </TouchableOpacity>
                 </View>
                 <View className='flex-row gap-2 justify-center items-center w-80 mt-6'>
@@ -316,8 +327,7 @@ const RegisterScreen = ({ navigation }) => {
                     <View className='flex-row gap-20 justify-center'>
                         <TouchableOpacity
                             className='border border-solid border-gray-400 rounded-2xl justify-center items-center p-4'
-                            onPress={handleGoogleSignIn}
-                            disabled={isLoading}
+                            disabled={loading}
                         >
                             <Image
                                 className='w-[30px] h-[30px]'

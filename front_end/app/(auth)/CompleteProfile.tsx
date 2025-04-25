@@ -12,8 +12,13 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { format } from 'date-fns';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import { firstCompleteUserProfile } from '@/redux/userSlice';
+import { useDispatch, useSelector } from 'react-redux';
+import Toast from 'react-native-toast-message';
 
 export default function CompleteProfile({ navigation }) {
+    const dispatch = useDispatch();
+    const { uid: id } = useSelector((state) => state?.auth?.user);
     // State cho gender dropdown
     const [open, setOpen] = useState(false);
     const [gender, setGender] = useState(null);
@@ -40,12 +45,48 @@ export default function CompleteProfile({ navigation }) {
     const formData = {
         gender,
         dateOfBirth: format(date, 'yyyy-MM-dd'),
-        weight,
-        height,
+        weight: {
+            unit: 'kg',
+            value: weight
+        },
+        height: {
+            unit: 'cm',
+            value: height
+        },
         has_hypertension,
         has_diabetes
     };
     console.log('formData', formData);
+    const checkValid = () => {
+        return gender && formData.dateOfBirth && weight && height;
+    };
+    const handleCompleteProfile = async () => {
+        if (!checkValid()) {
+            Toast.show({
+                type: 'error',
+                text1: 'Lỗi',
+                text2: 'Vui lòng nhập đầy đủ thông tin'
+            });
+            return;
+        }
+        try {
+            await dispatch(
+                firstCompleteUserProfile({ id, profileData: formData })
+            ).unwrap();
+            Toast.show({
+                type: 'success',
+                text1: 'Thành công',
+                text2: 'Cập nhật hồ sơ thành công'
+            });
+            navigation.navigate('MainApp', { screen: 'Home' });
+        } catch (error) {
+            Toast.show({
+                type: 'error',
+                text1: 'Lỗi',
+                text2: error
+            });
+        }
+    };
     // State cho date picker
     const [showDatePicker, setShowDatePicker] = useState(false);
 
@@ -235,7 +276,7 @@ export default function CompleteProfile({ navigation }) {
 
             {/* Continue Button */}
             <TouchableOpacity
-                onPress={(id) => handleUpdateProfile(id)}
+                onPress={handleCompleteProfile}
                 className='bg-blue-400 rounded-full py-4 mt-8 flex-row gap-1 items-center justify-center'
             >
                 <Text className='text-white text-center font-2xl font-bold'>

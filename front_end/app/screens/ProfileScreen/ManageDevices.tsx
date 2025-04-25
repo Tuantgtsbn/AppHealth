@@ -1,13 +1,38 @@
 import { View, Text, TouchableOpacity, TextInput } from 'react-native';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import CustomHeader from '@/components/ui/CustomHeader';
 import Card from '@/components/ui/Card';
 import { AntDesign, Feather } from '@expo/vector-icons';
 import { Modal } from 'react-native';
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState } from '@/redux/store';
+import {
+    deleteDevice,
+    fetchUserDevices,
+    updateDevice
+} from '@/redux/deviceSlice';
+import Toast from 'react-native-toast-message';
 
 export default function ManageDevices() {
     const [editedName, setEditedName] = useState('');
     const [selectedDeviceId, setSelectedDeviceId] = useState(null);
+    const { loading, devices } = useSelector(
+        (state: RootState) => state.device
+    );
+    const { uid: id } = useSelector(
+        (state: RootState) => state.auth?.user || 'jgr8crtfoRSr0ErsJlc75k7g1sl1'
+    );
+    const dispatch = useDispatch();
+    useEffect(() => {
+        async function fetchDevices() {
+            try {
+                await dispatch(fetchUserDevices(id)).unwrap();
+            } catch (error) {
+                console.log(error);
+            }
+        }
+        fetchDevices();
+    }, [id]);
     const listDevices = [
         {
             id: 1,
@@ -35,13 +60,46 @@ export default function ManageDevices() {
     const [isOpenModalEdit, setIsOpenModalEdit] = useState(false);
     const [isOpenModalConfirmDelete, setIsOpenModalConfirmDelete] =
         useState(false);
-    const handleConfirm = () => {
-        console.log('Confirm', editedName);
-        setIsOpenModalEdit(false);
+    const handleConfirm = async () => {
+        try {
+            await dispatch(
+                updateDevice({
+                    deviceId: selectedDeviceId,
+                    updateValues: {
+                        name: editedName
+                    }
+                })
+            ).unwrap();
+            Toast.show({
+                type: 'success',
+                text1: 'Thành công',
+                text2: 'Cập nhật thiết bị thành công'
+            });
+            setIsOpenModalEdit(false);
+        } catch (error) {
+            Toast.show({
+                type: 'error',
+                text1: 'Lỗi',
+                text2: error
+            });
+        }
     };
-    const handleDeleteDevice = () => {
-        console.log('Delete device', selectedDeviceId);
-        setIsOpenModalConfirmDelete(false);
+    const handleDeleteDevice = async () => {
+        try {
+            dispatch(deleteDevice(selectedDeviceId)).unwrap();
+            Toast.show({
+                type: 'success',
+                text1: 'Thành công',
+                text2: 'Xóa thiết bị thành công'
+            });
+            setIsOpenModalConfirmDelete(false);
+        } catch (error) {
+            Toast.show({
+                type: 'error',
+                text1: 'Lỗi',
+                text2: error
+            });
+        }
     };
     return (
         <View className='flex-1 bg-white'>
@@ -52,36 +110,54 @@ export default function ManageDevices() {
                         <Text className='text-xl font-bold'>
                             Danh sách thiết bị
                         </Text>
-                        {listDevices.map((item, index) => (
-                            <View
-                                className='flex-row justify-between items-center my-[10px]'
-                                key={item.id}
-                            >
-                                <Text>{item.name}</Text>
-                                <View className='flex-row gap-3'>
-                                    <TouchableOpacity
-                                        onPress={() => handleEditDevice(item)}
-                                    >
-                                        <Feather
-                                            name='edit'
-                                            size={24}
-                                            color='black'
-                                        />
-                                    </TouchableOpacity>
-                                    <TouchableOpacity
-                                        onPress={() =>
-                                            handleSelectDeletedDevice(item.id)
-                                        }
-                                    >
-                                        <AntDesign
-                                            name='delete'
-                                            size={24}
-                                            color='black'
-                                        />
-                                    </TouchableOpacity>
-                                </View>
+                        {loading ? (
+                            <View className='py-4 items-center'>
+                                <Text className='font-bold text-xl'>
+                                    Đang tải...
+                                </Text>
                             </View>
-                        ))}
+                        ) : devices.length > 0 ? (
+                            devices.map((item) => (
+                                <View
+                                    className='flex-row justify-between items-center my-[10px]'
+                                    key={item.id}
+                                >
+                                    <Text>{item.name}</Text>
+                                    <View className='flex-row gap-3'>
+                                        <TouchableOpacity
+                                            onPress={() =>
+                                                handleEditDevice(item)
+                                            }
+                                        >
+                                            <Feather
+                                                name='edit'
+                                                size={24}
+                                                color='black'
+                                            />
+                                        </TouchableOpacity>
+                                        <TouchableOpacity
+                                            onPress={() =>
+                                                handleSelectDeletedDevice(
+                                                    item.id
+                                                )
+                                            }
+                                        >
+                                            <AntDesign
+                                                name='delete'
+                                                size={24}
+                                                color='black'
+                                            />
+                                        </TouchableOpacity>
+                                    </View>
+                                </View>
+                            ))
+                        ) : (
+                            <View className='py-4 items-center'>
+                                <Text className='font-bold text-xl'>
+                                    Chưa có thiết bị nào
+                                </Text>
+                            </View>
+                        )}
                     </Card>
                 </View>
             </View>

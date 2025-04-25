@@ -16,42 +16,65 @@ import DropDownPicker from 'react-native-dropdown-picker';
 import { format } from 'date-fns';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import className from 'classnames';
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState } from '@/redux/store';
+import { updateEmail } from 'firebase/auth';
+import { auth } from '@config/firebase';
+import { updateUserProfile } from '@/redux/userSlice';
+import Toast from 'react-native-toast-message';
 type MetricType = {
     unit: string;
     value: number;
 };
 type FormDataType = {
-    dispalyName: string;
+    nameDisplay: string;
     email: string;
     phone: string;
     height: MetricType;
     weight: MetricType;
     gender: 'male' | 'female' | 'other';
-    dob: string;
+    dateOfBirth: string;
 };
+type Gender = 'male' | 'female' | 'other';
 export default function EditProfile({ navigation }) {
+    const { nameDisplay, email, phone, height, weight, gender, dateOfBirth } =
+        useSelector((state: RootState) => state.user.detailUser);
+    console.log(nameDisplay, email, phone, height, weight, gender, dateOfBirth);
+    const { uid: id } = useSelector(
+        (state: RootState) => state.auth?.user || 'jgr8crtfoRSr0ErsJlc75k7g1sl1'
+    );
     const [formData, setFormData] = useState<FormDataType>({
-        dispalyName: '',
-        email: '',
-        phone: '',
-        height: {
+        nameDisplay,
+        email: email || '',
+        phone: phone || '',
+        height: height ?? {
             unit: 'cm',
-            value: 150
+            value: 0
         },
-        weight: {
+        weight: weight ?? {
             unit: 'kg',
-            value: 100
+            value: 0
         },
-        gender: 'male',
-        dob: '2000-01-01'
+        gender,
+        dateOfBirth
     });
+    console.log(formData);
+    const dispatch = useDispatch();
     const [open, setOpen] = useState(false);
+    const [selectedGender, setSelectedGender] = useState(formData.gender);
+    // console.log(selectedGender);
+    const [heightInput, setHeightInput] = useState(
+        String(formData.height.value) || ''
+    );
+    const [weightInput, setWeightInput] = useState(
+        String(formData.weight.value) || ''
+    );
     const [genders, setGenders] = useState([
         { label: 'Nam', value: 'male' },
         { label: 'Nữ', value: 'female' },
         { label: 'Khác', value: 'other' }
     ]);
-    const [dob, setDob] = useState(new Date(formData.dob));
+    const [dob, setDob] = useState(new Date(formData.dateOfBirth));
     const [showDatePicker, setShowDatePicker] = useState(false);
     const onDateChange = (event: any, selectedDate?: Date) => {
         setShowDatePicker(Platform.OS === 'ios');
@@ -59,13 +82,67 @@ export default function EditProfile({ navigation }) {
             setDob(selectedDate);
             setFormData({
                 ...formData,
-                dob: format(selectedDate, 'yyyy-MM-dd')
+                dateOfBirth: format(selectedDate, 'yyyy-MM-dd')
             });
         }
     };
 
     const showDatePickerModal = () => {
         setShowDatePicker(true);
+    };
+    const handleGenderChange = (value: any) => {
+        if (value) {
+            setSelectedGender(value);
+            setFormData((prev) => ({
+                ...prev,
+                gender: value()
+            }));
+        }
+    };
+    const handleEditProfile = async () => {
+        if (!parseFloat(heightInput) || !parseFloat(weightInput)) {
+            Toast.show({
+                type: 'error',
+                text1: 'Lỗi',
+                text2: 'Vui lòng nhập đúng định dạng số'
+            });
+            return;
+        }
+
+        try {
+            if (email !== formData.email) {
+                console.log('Update email');
+                await updateEmail(auth.currentUser, formData.email);
+            }
+            await dispatch(
+                updateUserProfile({
+                    id,
+                    profileData: {
+                        ...formData,
+                        height: {
+                            unit: formData.height.unit,
+                            value: parseFloat(heightInput)
+                        },
+                        weight: {
+                            unit: formData.weight.unit,
+                            value: parseFloat(weightInput)
+                        }
+                    }
+                })
+            ).unwrap();
+            Toast.show({
+                type: 'success',
+                text1: 'Thành công',
+                text2: 'Cập nhật hồ sơ thành công'
+            });
+            navigation.goBack();
+        } catch (error) {
+            Toast.show({
+                type: 'error',
+                text1: 'Lỗi',
+                text2: error
+            });
+        }
     };
     return (
         <KeyboardAvoidingView
@@ -87,11 +164,11 @@ export default function EditProfile({ navigation }) {
                             <TextInput
                                 className='border border-gray-300 rounded-[8px] p-[10px]'
                                 placeholder='Tên hiển thị'
-                                value={formData.dispalyName}
+                                value={formData.nameDisplay}
                                 onChangeText={(text) =>
                                     setFormData({
                                         ...formData,
-                                        dispalyName: text
+                                        nameDisplay: text
                                     })
                                 }
                             />
@@ -167,16 +244,9 @@ export default function EditProfile({ navigation }) {
                             <TextInput
                                 className='border border-gray-300 rounded-[8px] p-[10px]'
                                 placeholder='Chiều cao'
-                                value={formData.height.value.toString()}
-                                onChangeText={(text) =>
-                                    setFormData({
-                                        ...formData,
-                                        height: {
-                                            ...formData.height,
-                                            value: parseInt(text)
-                                        }
-                                    })
-                                }
+                                value={heightInput}
+                                keyboardType='numeric'
+                                onChangeText={setHeightInput}
                             />
                             <View className='flex-row justify-between my-[8px] items-center'>
                                 <Text className='font-bold text-[20px]'>
@@ -221,17 +291,10 @@ export default function EditProfile({ navigation }) {
                             </View>
                             <TextInput
                                 className='border border-gray-300 rounded-[8px] p-[10px]'
-                                placeholder='Tên hiển thị'
-                                value={formData.weight.value.toString()}
-                                onChangeText={(text) =>
-                                    setFormData({
-                                        ...formData,
-                                        weight: {
-                                            ...formData.weight,
-                                            value: parseInt(text)
-                                        }
-                                    })
-                                }
+                                placeholder='Cân nặng'
+                                keyboardType='numeric'
+                                value={weightInput}
+                                onChangeText={setWeightInput}
                             />
                             <Text className='font-bold text-[20px] my-[8px]'>
                                 Giới tính
@@ -239,15 +302,10 @@ export default function EditProfile({ navigation }) {
                             <View style={{ zIndex: 1000 }} className=''>
                                 <DropDownPicker
                                     open={open}
-                                    value={formData.gender}
+                                    value={selectedGender}
                                     items={genders}
                                     setOpen={setOpen}
-                                    setValue={(text: any) =>
-                                        setFormData({
-                                            ...formData,
-                                            gender: text
-                                        })
-                                    }
+                                    setValue={handleGenderChange}
                                     setItems={setGenders}
                                     placeholder='Choose Gender'
                                     style={{
@@ -257,7 +315,7 @@ export default function EditProfile({ navigation }) {
                                         paddingVertical: 12
                                     }}
                                     textStyle={{
-                                        color: '#9ca3af'
+                                        color: '#000'
                                     }}
                                     dropDownContainerStyle={{
                                         borderColor: '#e5e7eb',
@@ -293,9 +351,7 @@ export default function EditProfile({ navigation }) {
                             )}
                             <TouchableOpacity
                                 className='bg-primary rounded-full py-4 mt-8'
-                                onPress={() => {
-                                    navigation.goBack();
-                                }}
+                                onPress={handleEditProfile}
                             >
                                 <Text className='text-white font-bold text-3xl text-center'>
                                     Lưu

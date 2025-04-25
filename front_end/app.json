@@ -26,7 +26,8 @@
             "adaptiveIcon": {
                 "foregroundImage": "./assets/images/adaptive-icon.png",
                 "backgroundColor": "#ffffff"
-            }
+            },
+            "package": "com.exercise.app"
         },
         "web": {
             "bundler": "metro",
@@ -41,6 +42,13 @@
                     "image": "./assets/images/new-splash-icon.png",
                     "resizeMode": "contain",
                     "backgroundColor": "#ffffff"
+                }
+            ],
+
+            [
+                "expo-av",
+                {
+                    "microphonePermission": false
                 }
             ]
         ],

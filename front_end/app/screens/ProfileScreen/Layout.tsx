@@ -4,12 +4,16 @@ import ManageDevices from './ManageDevices';
 import NotificationSetting from './NotificationSetting';
 import EditProfile from './EditProfile';
 import ListRegisterEmail from './ListRegisterEmail';
-import NotificationMode from './NotificationMode';
+import NotificationSettingMode from './NotificationMode';
+import ManageThreshold from './ManageThreshold';
 
 const stack = createStackNavigator();
 const ProfileStack = () => {
     return (
-        <stack.Navigator screenOptions={{ headerShown: false }}>
+        <stack.Navigator
+            id='ProfileStack'
+            screenOptions={{ headerShown: false }}
+        >
             <stack.Screen name='Profile' component={ProfileScreen} />
             <stack.Screen name='EditProfile' component={EditProfile} />
             <stack.Screen name='ManageDevices' component={ManageDevices} />
@@ -23,8 +27,9 @@ const ProfileStack = () => {
             />
             <stack.Screen
                 name='NotificationMode'
-                component={NotificationMode}
+                component={NotificationSettingMode}
             />
+            <stack.Screen name='ManageThreshold' component={ManageThreshold} />
         </stack.Navigator>
     );
 };

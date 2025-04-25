@@ -4,7 +4,8 @@ import {
     signOut,
     FacebookAuthProvider,
     UserCredential,
-    signInWithEmailAndPassword
+    signInWithEmailAndPassword,
+    signInWithPopup
 } from 'firebase/auth';
 import { auth, facebookProvider, db } from '@config/firebase';
 import { User, RegisterCredentials } from '@types/user.types';
@@ -33,8 +34,9 @@ export class AuthService {
                         credentials.firstName + ' ' + credentials.lastName,
                     has_hypertension: false,
                     has_diabetes: false,
-                    created_at: serverTimestamp(),
-                    updated_at: serverTimestamp()
+                    avatar: '',
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
                 },
                 { merge: true }
             );
@@ -119,6 +121,7 @@ export class AuthService {
                     nameDisplay: userCredential.user.displayName,
                     has_hypertension: false,
                     has_diabetes: false,
+                    avatar: userCredential.user.photoURL,
                     created_at: serverTimestamp(),
                     updated_at: serverTimestamp()
                 });
@@ -148,6 +151,7 @@ export class AuthService {
                             .join(' ') || '',
                     email: result.user.email,
                     nameDisplay: result.user.displayName,
+                    avatar: result.user.photoURL,
                     has_hypertension: false,
                     has_diabetes: false,
                     created_at: serverTimestamp(),

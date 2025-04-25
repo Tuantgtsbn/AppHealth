@@ -1,31 +1,43 @@
 import { View, Text, TouchableOpacity, Modal, TextInput } from 'react-native';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import CustomHeader from '@/components/ui/CustomHeader';
 import Card from '@/components/ui/Card';
 import { AntDesign, Entypo, Feather } from '@expo/vector-icons';
-
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState } from '@/redux/store';
+import {
+    addEmail,
+    deleteEmail,
+    fetchUserEmails,
+    updateEmail
+} from '@/redux/emailSlice';
+import Toast from 'react-native-toast-message';
+import { checkEmail } from '@/utils/checkEmail';
 export default function ListRegisterEmail() {
-    const listEmails = [
-        {
-            id: 1,
-            email: 'stefaniwong@gmail.com'
-        },
-        {
-            id: 2,
-            email: 'stefaniwong@gmail.com'
-        },
-        {
-            id: 3,
-            email: 'stefaniwong@gmail.com'
+    const { loading, emails } = useSelector((state: RootState) => state.email);
+    const { uid: id } = useSelector(
+        (state: RootState) => state.auth?.user || 'jgr8crtfoRSr0ErsJlc75k7g1sl1'
+    );
+    const dispatch = useDispatch();
+    useEffect(() => {
+        async function fetchEmails() {
+            try {
+                await dispatch(fetchUserEmails(id)).unwrap();
+            } catch (error) {
+                console.log(error);
+            }
         }
-    ];
+        fetchEmails();
+    }, []);
     const [isOpenModalEdit, setIsOpenModalEdit] = useState(false);
     const [isOpenConfirmDelete, setIsOpenConfirmDelete] = useState(false);
     const [isOpenModalAdd, setIsOpenModalAdd] = useState(false);
     const [addedEmail, setAddedEmail] = useState('');
     const [editedEmail, setEditedEmail] = useState('');
     const [selectedEmailId, setSelectedEmailId] = useState(null);
+    const [checkValid, setCheckValid] = useState(true);
     const handleEditEmail = (item) => {
+        setCheckValid(true);
         setIsOpenModalEdit(true);
         setSelectedEmailId(item.id);
         console.log('Edit email', item.id);
@@ -36,18 +48,78 @@ export default function ListRegisterEmail() {
         setSelectedEmailId(id);
         setIsOpenConfirmDelete(true);
     };
-    const handleConfirmEdit = () => {
-        console.log('Confirm', editedEmail);
-        setIsOpenModalEdit(false);
+    console.log(checkValid);
+    const handleConfirmEdit = async () => {
+        try {
+            const isValid = checkEmail(editedEmail);
+            setCheckValid(isValid);
+            if (!isValid) {
+                return;
+            }
+            await dispatch(
+                updateEmail({
+                    emailId: selectedEmailId,
+                    newEmail: editedEmail,
+                    userId: id
+                })
+            ).unwrap();
+            Toast.show({
+                type: 'success',
+                text1: 'Thành công',
+                text2: 'Cập nhật email thành công'
+            });
+            setIsOpenModalEdit(false);
+        } catch (error) {
+            Toast.show({
+                type: 'error',
+                text1: 'Lỗi',
+                text2: error
+            });
+        }
     };
-    const handleConfirmDelete = () => {
-        console.log('Delete email', selectedEmailId);
-        setIsOpenConfirmDelete(false);
+    const handleConfirmDelete = async () => {
+        try {
+            await dispatch(deleteEmail(selectedEmailId)).unwrap();
+            Toast.show({
+                type: 'success',
+                text1: 'Thành công',
+                text2: 'Xóa email thành công'
+            });
+            setIsOpenConfirmDelete(false);
+        } catch (error) {
+            Toast.show({
+                type: 'error',
+                text1: 'Lỗi',
+                text2: error
+            });
+        }
     };
-    const handleConfirmAdd = () => {
-        console.log('Add email', addedEmail);
-        setIsOpenModalAdd(false);
+    const handleConfirmAdd = async () => {
+        try {
+            const isValid = checkEmail(addedEmail);
+            setCheckValid(isValid);
+            if (!isValid) {
+                return;
+            }
+            await dispatch(
+                addEmail({ userId: id, email: addedEmail })
+            ).unwrap();
+            Toast.show({
+                type: 'success',
+                text1: 'Thành công',
+                text2: 'Thêm email thành công'
+            });
+            setIsOpenModalAdd(false);
+            setAddedEmail('');
+        } catch (error) {
+            Toast.show({
+                type: 'error',
+                text1: 'Lỗi',
+                text2: error
+            });
+        }
     };
+
     return (
         <View className='flex-1 bg-white'>
             <View className='mt-[16px]'>
@@ -66,40 +138,54 @@ export default function ListRegisterEmail() {
                             </TouchableOpacity>
                         </View>
                         <View>
-                            {listEmails.map((item, index) => (
-                                <View
-                                    className='flex-row justify-between my-[10px]'
-                                    key={item.id}
-                                >
-                                    <Text>{item.email}</Text>
-                                    <View className='flex-row gap-3'>
-                                        <TouchableOpacity
-                                            onPress={() =>
-                                                handleEditEmail(item)
-                                            }
-                                        >
-                                            <Feather
-                                                name='edit'
-                                                size={24}
-                                                color='black'
-                                            />
-                                        </TouchableOpacity>
-                                        <TouchableOpacity
-                                            onPress={() =>
-                                                handleSelectDeletedEmail(
-                                                    item.id
-                                                )
-                                            }
-                                        >
-                                            <AntDesign
-                                                name='delete'
-                                                size={24}
-                                                color='black'
-                                            />
-                                        </TouchableOpacity>
-                                    </View>
+                            {loading ? (
+                                <View className='py-4 items-center'>
+                                    <Text className='font-bold text-xl'>
+                                        Đang tải...
+                                    </Text>
                                 </View>
-                            ))}
+                            ) : emails.length > 0 ? (
+                                emails.map((item) => (
+                                    <View
+                                        className='flex-row justify-between my-[10px]'
+                                        key={item.id}
+                                    >
+                                        <Text>{item.email}</Text>
+                                        <View className='flex-row gap-3'>
+                                            <TouchableOpacity
+                                                onPress={() =>
+                                                    handleEditEmail(item)
+                                                }
+                                            >
+                                                <Feather
+                                                    name='edit'
+                                                    size={24}
+                                                    color='black'
+                                                />
+                                            </TouchableOpacity>
+                                            <TouchableOpacity
+                                                onPress={() =>
+                                                    handleSelectDeletedEmail(
+                                                        item.id
+                                                    )
+                                                }
+                                            >
+                                                <AntDesign
+                                                    name='delete'
+                                                    size={24}
+                                                    color='black'
+                                                />
+                                            </TouchableOpacity>
+                                        </View>
+                                    </View>
+                                ))
+                            ) : (
+                                <View className='py-4 items-center'>
+                                    <Text className='font-bold text-xl'>
+                                        Chưa có email nào
+                                    </Text>
+                                </View>
+                            )}
                         </View>
                     </Card>
                 </View>
@@ -121,7 +207,11 @@ export default function ListRegisterEmail() {
                             className='border border-gray-300 rounded-[8px] p-[10px]'
                             placeholder='Email'
                         />
-
+                        {!checkValid && (
+                            <Text className='text-red-500'>
+                                Email không hợp lệ
+                            </Text>
+                        )}
                         <View className='flex-row justify-end gap-4 mt-[16px]'>
                             <TouchableOpacity
                                 className='px-6 py-3 rounded-full bg-gray-200'
@@ -197,6 +287,11 @@ export default function ListRegisterEmail() {
                             className='border border-gray-300 rounded-[8px] p-[10px]'
                             placeholder='Email'
                         />
+                        {!checkValid && (
+                            <Text className='text-red-500'>
+                                Email không hợp lệ
+                            </Text>
+                        )}
                         <View className='flex-row justify-end gap-4 mt-[16px]'>
                             <TouchableOpacity
                                 className='px-6 py-3 rounded-full bg-gray-200'

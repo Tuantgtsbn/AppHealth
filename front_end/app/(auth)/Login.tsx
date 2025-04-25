@@ -4,23 +4,67 @@ import {
     Text,
     TextInput,
     TouchableOpacity,
-    StyleSheet
+    StyleSheet,
+    ActivityIndicator
 } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Feather from '@expo/vector-icons/Feather';
 import Fontisto from '@expo/vector-icons/Fontisto';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Image } from 'react-native';
+import { useDispatch, useSelector } from 'react-redux';
+import { signInWithEmailPassword } from '@/redux/authSlice';
+import * as yup from 'yup';
+import { Controller, useForm } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import Toast from 'react-native-toast-message';
+const schema = yup.object().shape({
+    email: yup
+        .string()
+        .required('Vui lòng nhập email')
+        .email('Email không hợp lệ'),
+    password: yup
+        .string()
+        .required('Vui lòng nhập mật khẩu')
+        .min(6, 'Mật khẩu phải có ít nhất 6 ký tự')
+});
+
+type FormData = yup.InferType<typeof schema>;
 const LoginScreen = ({ navigation }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isShowPassword, setIsShowPassword] = useState(false);
+    const { loading } = useSelector((state) => state.auth);
     console.log(navigation);
-    const handleLogin = () => {
-        // Xử lý đăng nhập
-        navigation.navigate('MainApp');
+    const {
+        control,
+        handleSubmit,
+        formState: { errors }
+    } = useForm<FormData>({
+        resolver: yupResolver(schema),
+        defaultValues: {
+            email: '',
+            password: ''
+        }
+    });
+    const onSubmit = async (data: FormData) => {
+        try {
+            await dispatch(signInWithEmailPassword(data)).unwrap();
+            Toast.show({
+                type: 'success',
+                text1: 'Thành công',
+                text2: 'Đăng nhập thành công'
+            });
+            navigation.navigate('MainApp', { screen: 'Home' });
+        } catch (error) {
+            Toast.show({
+                type: 'error',
+                text1: 'Lỗi',
+                text2: error
+            });
+        }
     };
-
+    const dispatch = useDispatch();
     const handleRegister = () => {
         navigation.navigate('Register');
     };
@@ -35,25 +79,42 @@ const LoginScreen = ({ navigation }) => {
                 <View className='gap-4 mt-[40px]'>
                     <View className='flex-row gap-2 px-2 py-2 bg-[#F7F8F8] rounded-lg w-90 items-center'>
                         <Fontisto name='email' size={24} color='black' />
-                        <TextInput
-                            placeholder='Email'
-                            value={email}
-                            onChangeText={setEmail}
-                            keyboardType='email-address'
-                            autoCapitalize='none'
-                            className='px-2 py-2 w-80'
+                        <Controller
+                            control={control}
+                            name='email'
+                            render={({ field: { onChange, value } }) => (
+                                <TextInput
+                                    placeholder='Email'
+                                    value={value}
+                                    onChangeText={onChange}
+                                    keyboardType='email-address'
+                                    autoCapitalize='none'
+                                    className='px-2 py-2 w-80'
+                                />
+                            )}
                         />
                     </View>
+                    {errors.email && (
+                        <Text className='text-red-500 ml-2 mt-1'>
+                            {errors.email.message}
+                        </Text>
+                    )}
                     <View className='flex-row gap-2 px-2 py-2 bg-[#F7F8F8] rounded-lg w-90 items-center'>
                         <Feather name='key' size={24} color='black' />
-                        <TextInput
-                            placeholder='Password'
-                            value={password}
-                            onChangeText={setPassword}
-                            keyboardType='default'
-                            autoCapitalize='none'
-                            className='px-2 py-2 w-80'
-                            secureTextEntry={!isShowPassword}
+                        <Controller
+                            control={control}
+                            name='password'
+                            render={({ field: { onChange, value } }) => (
+                                <TextInput
+                                    placeholder='Password'
+                                    value={value}
+                                    onChangeText={onChange}
+                                    secureTextEntry={!isShowPassword}
+                                    keyboardType='default'
+                                    autoCapitalize='none'
+                                    className='px-2 py-2 w-80'
+                                />
+                            )}
                         />
                         {isShowPassword ? (
                             <Feather
@@ -75,6 +136,11 @@ const LoginScreen = ({ navigation }) => {
                             />
                         )}
                     </View>
+                    {errors.password && (
+                        <Text className='text-red-500 ml-2 mt-1'>
+                            {errors.password.message}
+                        </Text>
+                    )}
                 </View>
                 <View className='mt-4'>
                     <Text className='text-center underline'>
@@ -86,13 +152,15 @@ const LoginScreen = ({ navigation }) => {
             <View className='mb-[40px]'>
                 <View className='w-80'>
                     <TouchableOpacity
+                        disabled={loading}
                         className='bg-primary px-2 py-4 rounded-full mt-4 w-full flex-row gap-4 justify-center'
-                        onPress={handleLogin}
+                        onPress={handleSubmit(onSubmit)}
                     >
                         <MaterialIcons name='login' size={24} color='white' />
                         <Text className='text-center text-white font-bold text-xl'>
                             Đăng nhập
                         </Text>
+                        {loading && <ActivityIndicator color='white' />}
                     </TouchableOpacity>
                 </View>
                 <View className='flex-row gap-2 justify-center items-center w-80 mt-6'>

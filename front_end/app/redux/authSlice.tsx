@@ -3,11 +3,13 @@ import { AuthService } from '@services/auth.service';
 import { GoogleAuthProvider, UserCredential } from 'firebase/auth';
 
 interface AuthState {
-    user: any | null;
+    user: object | null;
     token: string | null;
     isAuthenticated: boolean;
     loading: boolean;
     error: string | null;
+    providerId: string | null;
+    methodSigin: string | null;
 }
 
 const initialState: AuthState = {
@@ -15,13 +17,23 @@ const initialState: AuthState = {
     token: null,
     isAuthenticated: false,
     loading: false,
-    error: null
+    error: null,
+    providerId: null,
+    methodSigin: null
 };
-
+const serializeUser = (user: UserCredential['user']) => ({
+    uid: user.uid,
+    email: user.email,
+    displayName: user.displayName,
+    photoURL: user.photoURL,
+    emailVerified: user.emailVerified,
+    phoneNumber: user.phoneNumber,
+    providerId: user.providerId
+});
 // Async thunk for Google Sign In
 export const signInWithGoogle = createAsyncThunk(
     'auth/signInWithGoogle',
-    async (credential: any) => {
+    async (credential: any, { rejectWithValue }) => {
         try {
             const userCredential =
                 await AuthService.signInWithGoogleCredential(credential);
@@ -30,7 +42,7 @@ export const signInWithGoogle = createAsyncThunk(
                 token: await userCredential.user.getIdToken()
             };
         } catch (error: any) {
-            throw new Error(error.message);
+            return rejectWithValue(error.message);
         }
     }
 );
@@ -38,16 +50,21 @@ export const signInWithGoogle = createAsyncThunk(
 // Async thunk for Email/Password Sign In
 export const signInWithEmailPassword = createAsyncThunk(
     'auth/signInWithEmailPassword',
-    async (credentials: { email: string; password: string }) => {
+    async (
+        credentials: { email: string; password: string },
+        { rejectWithValue }
+    ) => {
         try {
             const userCredential =
                 await AuthService.signInWithEmailAndPassword(credentials);
+            console.log(userCredential);
             return {
-                user: userCredential.user,
-                token: await userCredential.user.getIdToken()
+                user: serializeUser(userCredential.user),
+                token: await userCredential.user.getIdToken(),
+                methodSigin: 'email'
             };
         } catch (error: any) {
-            throw new Error(error.message);
+            return rejectWithValue(error.message);
         }
     }
 );
@@ -55,24 +72,40 @@ export const signInWithEmailPassword = createAsyncThunk(
 // Async thunk for Email/Password Registration
 export const registerWithEmailPassword = createAsyncThunk(
     'auth/registerWithEmailPassword',
-    async (credentials: { email: string; password: string }) => {
+    async (
+        credentials: {
+            email: string;
+            password: string;
+            firstName: string;
+            lastName: string;
+        },
+        { rejectWithValue }
+    ) => {
         try {
             const userCredential =
                 await AuthService.registerWithEmailAndPassword(credentials);
             return {
-                user: userCredential.user,
-                token: await userCredential.user.getIdToken()
+                user: serializeUser(userCredential.user),
+                token: await userCredential.user.getIdToken(),
+                methodSigin: 'email'
             };
         } catch (error: any) {
-            throw new Error(error.message);
+            return rejectWithValue(error.message);
         }
     }
 );
 
 // Async thunk for Sign Out
-export const signOut = createAsyncThunk('auth/signOut', async () => {
-    await AuthService.signOut();
-});
+export const signOut = createAsyncThunk(
+    'auth/signOut',
+    async (_, { rejectWithValue }) => {
+        try {
+            await AuthService.signOut();
+        } catch (error: any) {
+            return rejectWithValue(error.message);
+        }
+    }
+);
 
 const authSlice = createSlice({
     name: 'auth',
@@ -107,7 +140,7 @@ const authSlice = createSlice({
             })
             .addCase(signInWithGoogle.rejected, (state, action) => {
                 state.loading = false;
-                state.error = action.error.message || 'Google sign in failed';
+                state.error = action.payload || 'Google sign in failed';
             });
 
         // Email/Password Sign In
@@ -122,10 +155,11 @@ const authSlice = createSlice({
                 state.token = action.payload.token;
                 state.isAuthenticated = true;
                 state.error = null;
+                state.methodSigin = action.payload.methodSigin;
             })
             .addCase(signInWithEmailPassword.rejected, (state, action) => {
                 state.loading = false;
-                state.error = action.error.message || 'Sign in failed';
+                state.error = action.payload || 'Sign in failed';
             });
 
         // Email/Password Registration
@@ -140,19 +174,29 @@ const authSlice = createSlice({
                 state.token = action.payload.token;
                 state.isAuthenticated = true;
                 state.error = null;
+                state.methodSigin = action.payload.methodSigin;
             })
             .addCase(registerWithEmailPassword.rejected, (state, action) => {
                 state.loading = false;
-                state.error = action.error.message || 'Registration failed';
+                state.error = action.payload || 'Registration failed';
             });
 
         // Sign Out
-        builder.addCase(signOut.fulfilled, (state) => {
-            state.user = null;
-            state.token = null;
-            state.isAuthenticated = false;
-            state.error = null;
-        });
+        builder
+            .addCase(signOut.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(signOut.fulfilled, (state) => {
+                state.user = null;
+                state.token = null;
+                state.isAuthenticated = false;
+                state.error = null;
+                state.methodSigin = null;
+            })
+            .addCase(signOut.rejected, (state, action) => {
+                state.error = action.payload || 'Sign out failed';
+            });
     }
 });
 
