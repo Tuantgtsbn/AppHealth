@@ -46,7 +46,7 @@ export default function NotificationSettingMode() {
                 break;
             case 'sound':
                 const { sound } = await Audio.Sound.createAsync(
-                    require('@assets/sounds/samsung_notifications.mp3')
+                    require('@assets/sounds/notifications.mp3')
                 );
                 await sound.playAsync();
                 break;

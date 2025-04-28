@@ -19,9 +19,10 @@ import className from 'classnames';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '@/redux/store';
 import { updateEmail } from 'firebase/auth';
-import { auth } from '@config/firebase';
+import { auth, storage } from '@config/firebase';
 import { updateUserProfile } from '@/redux/userSlice';
 import Toast from 'react-native-toast-message';
+import AvatarPicker from './components/AvatarPicker';
 type MetricType = {
     unit: string;
     value: number;
@@ -37,8 +38,16 @@ type FormDataType = {
 };
 type Gender = 'male' | 'female' | 'other';
 export default function EditProfile({ navigation }) {
-    const { nameDisplay, email, phone, height, weight, gender, dateOfBirth } =
-        useSelector((state: RootState) => state.user.detailUser);
+    const {
+        nameDisplay,
+        email,
+        phone,
+        height,
+        weight,
+        gender,
+        dateOfBirth,
+        avatar
+    } = useSelector((state: RootState) => state.user.detailUser);
     console.log(nameDisplay, email, phone, height, weight, gender, dateOfBirth);
     const { uid: id } = useSelector(
         (state: RootState) => state.auth?.user || 'jgr8crtfoRSr0ErsJlc75k7g1sl1'
@@ -153,10 +162,7 @@ export default function EditProfile({ navigation }) {
                 <ScrollView className='flex-1 bg-white'>
                     <View className='mt-[16px] items-center'>
                         <CustomHeader title='Chỉnh sửa thông tin' />
-                        <View className='w-[112px] h-[112px] justify-center items-center rounded-full bg-gray-300 mt-[35px]'>
-                            <AntDesign name='user' size={70} color='black' />
-                            <AntDesign name='camerao' size={24} color='black' />
-                        </View>
+                        <AvatarPicker avatarURL={avatar} />
                         <View className='px-[35px] mt-[16px]'>
                             <Text className='font-bold text-[20px] my-[8px]'>
                                 Tên hiển thị

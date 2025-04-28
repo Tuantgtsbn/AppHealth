@@ -3,14 +3,23 @@ import AntDesign from '@expo/vector-icons/AntDesign';
 import Feather from '@expo/vector-icons/Feather';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import React, { useEffect } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
-import { useSelector } from 'react-redux';
+import {
+    View,
+    Text,
+    TouchableOpacity,
+    Image,
+    ScrollView,
+    ActivityIndicator
+} from 'react-native';
+import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '@/redux/store';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { signOut } from '@/redux/authSlice';
 const ProfileScreen = ({ navigation }) => {
-    const { dateOfBirth, weight, height, nameDisplay, email } = useSelector(
-        (state: RootState) => state.user.detailUser
-    );
+    const dispatch = useDispatch();
+    const { loading } = useSelector((state: RootState) => state.auth);
+    const { dateOfBirth, weight, height, nameDisplay, email, avatar } =
+        useSelector((state: RootState) => state.user.detailUser);
 
     const dataMetrics = [
         {
@@ -40,15 +49,26 @@ const ProfileScreen = ({ navigation }) => {
     const handleNavigateManageThreshold = () => {
         navigation.navigate('ManageThreshold');
     };
+    const handleLogout = async () => {
+        try {
+            await dispatch(signOut()).unwrap();
+            navigation.navigate('Auth');
+        } catch (error) {
+            console.log(error);
+        }
+    };
     return (
-        <View className='flex-1 px-[30px] bg-white'>
+        <ScrollView className='flex-1 px-[30px] bg-white'>
             <Text className='font-bold text-3xl text-center mt-[10px]'>
                 Hồ sơ cá nhân
             </Text>
             <View className='flex-row justify-between items-center mt-[35px]'>
                 <View className='flex-row gap-3'>
                     <View className='w-[40px] h-[40px] bg-gray-300 rounded-full justify-center items-center'>
-                        <AntDesign name='user' size={24} color='black' />
+                        <Image
+                            source={{ uri: avatar }}
+                            className='w-full h-full rounded-full'
+                        />
                     </View>
                     <View>
                         <Text className='font-semibold'>{nameDisplay}</Text>
@@ -150,7 +170,33 @@ const ProfileScreen = ({ navigation }) => {
                     </TouchableOpacity>
                 </Card>
             </View>
-        </View>
+            <View className='my-[35px]'>
+                <Card>
+                    <Text className='font-bold text-xl'>Đăng xuất</Text>
+                    <TouchableOpacity
+                        className='mt-[10px]'
+                        onPress={handleLogout}
+                    >
+                        <View className='flex-row justify-between'>
+                            <View className='flex-row gap-2'>
+                                <MaterialCommunityIcons
+                                    name='logout'
+                                    size={24}
+                                    color='black'
+                                />
+                                <Text>Đăng xuất</Text>
+                            </View>
+                            {loading && (
+                                <ActivityIndicator
+                                    size={'small'}
+                                    color={'gray'}
+                                />
+                            )}
+                        </View>
+                    </TouchableOpacity>
+                </Card>
+            </View>
+        </ScrollView>
     );
 };
 

@@ -64,6 +64,8 @@ const MonthlyChartScreen = () => {
         ]
     });
     const [loading, setLoading] = useState(true);
+    const [isEmpty, setIsEmpty] = useState(false);
+    const [error, setError] = useState(false);
 
     useEffect(() => {
         loadMonthlyData(selectedMonth);
@@ -83,6 +85,7 @@ const MonthlyChartScreen = () => {
 
             const startOfMonth = date.clone().startOf('month').toDate();
             const endOfMonth = date.clone().endOf('month').toDate();
+            console.log(startOfMonth, endOfMonth);
 
             // Truy vấn dữ liệu sức khỏe trong tháng
             const healthDataQuery = query(
@@ -94,12 +97,34 @@ const MonthlyChartScreen = () => {
             );
 
             const querySnapshot = await getDocs(healthDataQuery);
+            if (querySnapshot.empty) {
+                console.log(true);
+                setIsEmpty(true);
+                setLoading(false);
+                return;
+            } else {
+                setIsEmpty(false);
+            }
 
             // Tạo đối tượng để nhóm dữ liệu theo ngày
             const dailyData = {};
+            const maxDaysInMonth = (() => {
+                const currentMonth = moment().month();
+                const currentYear = moment().year();
 
+                // Nếu là tháng hiện tại, lấy ngày hiện tại
+                if (
+                    date.month() === currentMonth &&
+                    date.year() === currentYear
+                ) {
+                    return moment().date();
+                }
+                // Nếu là tháng trong quá khứ, lấy tổng số ngày trong tháng
+                return date.daysInMonth();
+            })();
+            console.log(maxDaysInMonth);
             // Khởi tạo mảng cho tất cả các ngày trong tháng
-            for (let i = 1; i <= date.daysInMonth(); i++) {
+            for (let i = 1; i <= maxDaysInMonth; i++) {
                 const dayStr = i.toString();
                 dailyData[dayStr] = {
                     heartRates: [],
@@ -110,12 +135,13 @@ const MonthlyChartScreen = () => {
             // Phân loại dữ liệu theo ngày
             querySnapshot.forEach((doc) => {
                 const data = doc.data();
+                console.log(data);
                 if (data.createdAt) {
                     const dayOfMonth = moment(data.createdAt.toDate())
                         .date()
                         .toString();
 
-                    if (!dailyData[dayOfMonth]) {
+                    if (dailyData[dayOfMonth]) {
                         if (typeof data.heartRate === 'number') {
                             dailyData[dayOfMonth].heartRates.push(
                                 data.heartRate
@@ -141,7 +167,7 @@ const MonthlyChartScreen = () => {
 
                 // Nếu không có dữ liệu thực, tạo dữ liệu giả
                 if (hrValues.length === 0) {
-                    avgHeartRates.push(Math.floor(65 + Math.random() * 25)); // 65-90
+                    avgHeartRates.push(0);
                 } else {
                     // Đảm bảo dữ liệu là mảng và không rỗng trước khi sử dụng reduce
                     const sum = hrValues.reduce((acc, val) => acc + val, 0);
@@ -149,7 +175,7 @@ const MonthlyChartScreen = () => {
                 }
 
                 if (spo2Values.length === 0) {
-                    avgSpo2Values.push(Math.floor(94 + Math.random() * 7)); // 94-100
+                    avgSpo2Values.push(0); // 94-100
                 } else {
                     // Đảm bảo dữ liệu là mảng và không rỗng trước khi sử dụng reduce
                     const sum = spo2Values.reduce((acc, val) => acc + val, 0);
@@ -157,47 +183,9 @@ const MonthlyChartScreen = () => {
                 }
             });
 
-            // Lấy 10 ngày để hiển thị trên biểu đồ (để tránh quá nhiều dữ liệu)
-            const visibleDays = [];
-            const step = Math.max(1, Math.floor(daysOfMonth.length / 10));
-            for (let i = 0; i < daysOfMonth.length; i += step) {
-                if (i < daysOfMonth.length) {
-                    visibleDays.push(daysOfMonth[i]);
-                }
-            }
-
-            // Nếu step > 1, đảm bảo ngày cuối cùng được đưa vào
-            if (
-                step > 1 &&
-                visibleDays.length > 0 &&
-                visibleDays[visibleDays.length - 1] !==
-                    daysOfMonth[daysOfMonth.length - 1]
-            ) {
-                visibleDays.push(daysOfMonth[daysOfMonth.length - 1]);
-            }
-
-            // Lấy dữ liệu tương ứng cho các ngày hiển thị
-            const visibleHeartRates = [];
-            const visibleSpo2Values = [];
-
-            visibleDays.forEach((day) => {
-                const index = daysOfMonth.indexOf(day);
-                if (index !== -1) {
-                    visibleHeartRates.push(avgHeartRates[index]);
-                    visibleSpo2Values.push(avgSpo2Values[index]);
-                }
-            });
-
-            // Đảm bảo có ít nhất một điểm dữ liệu
-            if (visibleHeartRates.length === 0) {
-                visibleDays.push('1');
-                visibleHeartRates.push(75);
-                visibleSpo2Values.push(97);
-            }
-
             // Tạo dữ liệu cho biểu đồ nhịp tim
             setHeartRateData({
-                labels: visibleDays,
+                labels: daysOfMonth,
                 datasets: [
                     {
                         data: avgHeartRates,
@@ -206,10 +194,10 @@ const MonthlyChartScreen = () => {
                     }
                 ]
             });
-
+            console.log(avgHeartRates, avgSpo2Values);
             // Tạo dữ liệu cho biểu đồ SpO2
             setSpo2Data({
-                labels: visibleDays,
+                labels: daysOfMonth,
                 datasets: [
                     {
                         data: avgSpo2Values,
@@ -221,33 +209,7 @@ const MonthlyChartScreen = () => {
             });
         } catch (error) {
             console.error('Lỗi khi tải dữ liệu theo tháng:', error);
-
-            // Thiết lập dữ liệu mặc định khi có lỗi
-            const fallbackData = {
-                labels: ['1', '5', '10', '15', '20', '25', '30'],
-                datasets: [
-                    {
-                        data: [75, 78, 76, 74, 77, 80, 75],
-                        color: (opacity = 1) => `rgba(255, 71, 87, ${opacity})`,
-                        strokeWidth: 2
-                    }
-                ]
-            };
-
-            const fallbackSpo2Data = {
-                labels: ['1', '5', '10', '15', '20', '25', '30'],
-                datasets: [
-                    {
-                        data: [97, 98, 96, 97, 98, 97, 96],
-                        color: (opacity = 1) =>
-                            `rgba(46, 134, 222, ${opacity})`,
-                        strokeWidth: 2
-                    }
-                ]
-            };
-
-            setHeartRateData(fallbackData);
-            setSpo2Data(fallbackSpo2Data);
+            setError(true);
         } finally {
             setLoading(false);
         }
@@ -301,22 +263,34 @@ const MonthlyChartScreen = () => {
                         <Text style={styles.chartTitle}>
                             Nhịp tim trung bình (bpm)
                         </Text>
-                        {heartRateData.datasets &&
-                        heartRateData.datasets[0] &&
-                        heartRateData.datasets[0].data &&
-                        heartRateData.datasets[0].data.length > 0 ? (
-                            <LineChart
-                                data={heartRateData}
-                                width={width - 40}
-                                height={220}
-                                chartConfig={{
-                                    ...chartConfig,
-                                    color: (opacity = 1) =>
-                                        `rgba(255, 71, 87, ${opacity})`
-                                }}
-                                bezier
-                                style={styles.chart}
-                            />
+                        {!isEmpty ? (
+                            <ScrollView
+                                horizontal={true}
+                                showsHorizontalScrollIndicator={false}
+                                contentContainerStyle={{ paddingRight: 20 }}
+                            >
+                                <LineChart
+                                    data={heartRateData}
+                                    width={Math.max(
+                                        width - 40,
+                                        heartRateData.labels.length * 60
+                                    )} // Đảm bảo đủ rộng cho tất cả labels
+                                    height={220}
+                                    chartConfig={{
+                                        ...chartConfig,
+                                        color: (opacity = 1) =>
+                                            `rgba(255, 71, 87, ${opacity})`
+                                    }}
+                                    bezier
+                                    style={styles.chart}
+                                />
+                            </ScrollView>
+                        ) : error ? (
+                            <View style={styles.noDataContainer}>
+                                <Text style={styles.noDataText}>
+                                    Đã xảy ra lỗi khi tải dữ liệu
+                                </Text>
+                            </View>
                         ) : (
                             <View style={styles.noDataContainer}>
                                 <Text style={styles.noDataText}>
@@ -334,22 +308,34 @@ const MonthlyChartScreen = () => {
                         <Text style={styles.chartTitle}>
                             SpO2 trung bình (%)
                         </Text>
-                        {spo2Data.datasets &&
-                        spo2Data.datasets[0] &&
-                        spo2Data.datasets[0].data &&
-                        spo2Data.datasets[0].data.length > 0 ? (
-                            <LineChart
-                                data={spo2Data}
-                                width={width - 40}
-                                height={220}
-                                chartConfig={{
-                                    ...chartConfig,
-                                    color: (opacity = 1) =>
-                                        `rgba(46, 134, 222, ${opacity})`
-                                }}
-                                bezier
-                                style={styles.chart}
-                            />
+                        {!isEmpty ? (
+                            <ScrollView
+                                horizontal={true}
+                                showsHorizontalScrollIndicator={false}
+                                contentContainerStyle={{ paddingRight: 20 }}
+                            >
+                                <LineChart
+                                    data={spo2Data}
+                                    width={Math.max(
+                                        width - 40,
+                                        spo2Data.labels.length * 60
+                                    )} // Đảm bảo đủ rộng cho tất cả labels
+                                    height={220}
+                                    chartConfig={{
+                                        ...chartConfig,
+                                        color: (opacity = 1) =>
+                                            `rgba(46, 134, 222, ${opacity})`
+                                    }}
+                                    bezier
+                                    style={styles.chart}
+                                />
+                            </ScrollView>
+                        ) : error ? (
+                            <View style={styles.noDataContainer}>
+                                <Text style={styles.noDataText}>
+                                    Đã xảy ra lỗi khi tải dữ liệu
+                                </Text>
+                            </View>
                         ) : (
                             <View style={styles.noDataContainer}>
                                 <Text style={styles.noDataText}>
@@ -374,8 +360,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#F9F9F9'
     },
     header: {
-        padding: 20,
-        paddingTop: 50,
+        padding: 10,
         backgroundColor: 'white',
         borderBottomWidth: 1,
         borderBottomColor: '#F0F0F0'

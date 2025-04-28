@@ -1,24 +1,34 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, View, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { RootState } from '@/redux/store';
+import { useSelector } from 'react-redux';
+import { useNetwork } from '@/context/NetWorkContext';
+import { fakeDataFromSensor } from '@services/sensor.service';
 
-const HealthMetricCard = ({ title, unit, icon, iconColor }) => {
-    const [value, setValue] = useState(0);
-    const [isWarning, setisWarning] = useState(false);
-    useEffect(() => {
-        const interval = setInterval(() => {
-            if (icon === 'heart') {
-                const value = Math.floor(Math.random() * 100);
-                setValue(value);
-                setisWarning(value > 100 || value < 60);
-            } else {
-                const value = 65 + Math.floor(Math.random() * 35);
-                setValue(value);
-                setisWarning(value > 100 || value < 95);
-            }
-        }, 1000);
-        return () => clearInterval(interval);
-    }, []);
+const HealthMetricCard = ({
+    title,
+    unit,
+    icon,
+    iconColor,
+    createdAt = '',
+    value,
+    field
+}) => {
+    const { heartRateThreshold, spo2Threshold } = useSelector(
+        (state: RootState) => state.user?.detailUser
+    );
+    const isWarning = (() => {
+        if (field === 'heartRate') {
+            return (
+                value < heartRateThreshold?.min ||
+                value > heartRateThreshold?.max
+            );
+        } else if (field === 'spo2') {
+            return value < spo2Threshold?.min || value > spo2Threshold?.max;
+        }
+        return false;
+    })();
     return (
         <View style={[styles.card, isWarning && styles.warningCard]}>
             <View style={styles.iconContainer}>
@@ -26,6 +36,7 @@ const HealthMetricCard = ({ title, unit, icon, iconColor }) => {
             </View>
             <View style={styles.contentContainer}>
                 <Text style={styles.title}>{title}</Text>
+                {createdAt && <Text style={styles.title}>{createdAt}</Text>}
                 <View style={styles.valueContainer}>
                     <Text
                         style={[styles.value, isWarning && styles.warningText]}

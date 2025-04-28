@@ -3,10 +3,9 @@ import {
     StyleSheet,
     View,
     Text,
-    ScrollView,
-    TouchableOpacity,
+    Dimensions,
     ActivityIndicator,
-    Dimensions
+    ScrollView
 } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
 import { auth, db } from '@config/firebase';
@@ -15,16 +14,19 @@ import {
     query,
     where,
     orderBy,
-    getDocs,
+    limit,
+    onSnapshot,
     Timestamp
 } from 'firebase/firestore';
 import moment from 'moment';
-import 'moment/locale/vi'; // Sử dụng ngôn ngữ tiếng Việt
-
-moment.locale('vi'); // Thiết lập ngôn ngữ tiếng Việt
-
 const { width } = Dimensions.get('window');
-type HeartRateData = {
+type HealthData = {
+    heartRate: number;
+    spo2: number;
+    createdAt: Timestamp;
+    timeLabel: string;
+};
+type ChartData = {
     labels: string[];
     datasets: {
         data: number[];
@@ -32,141 +34,120 @@ type HeartRateData = {
         strokeWidth: number;
     }[];
 };
-type Spo2Data = {
-    labels: string[];
-    datasets: {
-        data: number[];
-        color: (opacity: number) => string;
-        strokeWidth: number;
-    }[];
-};
-
-const DailyChartScreen = () => {
-    const [selectedDate, setSelectedDate] = useState(moment());
-    const [heartRateData, setHeartRateData] = useState<HeartRateData>(null);
-    const [spo2Data, setSpo2Data] = useState<Spo2Data>(null);
+const RealTimeChart = () => {
     const [loading, setLoading] = useState(true);
-
+    const [healthData, setHealthData] = useState<HealthData[]>([]);
+    const [heartRateData, setHeartRateData] = useState<ChartData>({
+        labels: [],
+        datasets: [
+            {
+                data: [],
+                color: (opacity = 1) => `rgba(255, 71, 87, ${opacity})`,
+                strokeWidth: 2
+            }
+        ]
+    });
+    const [spo2Data, setSpo2Data] = useState<ChartData>({
+        labels: [],
+        datasets: [
+            {
+                data: [],
+                color: (opacity = 1) => `rgba(46, 134, 222, ${opacity})`,
+                strokeWidth: 2
+            }
+        ]
+    });
     useEffect(() => {
-        loadDailyData(selectedDate);
-    }, [selectedDate]);
-
-    const loadDailyData = async (date) => {
-        try {
-            setLoading(true);
-
-            const userId =
-                auth?.currentUser?.uid || 'jgr8crtfoRSr0ErsJlc75k7g1sl1';
-            const startOfDay = date.clone().startOf('day').toDate();
-            const endOfDay = date.clone().endOf('day').toDate();
-            console.log(startOfDay, endOfDay);
-            // Truy vấn dữ liệu sức khỏe trong ngày
-            const healthDataQuery = query(
-                collection(db, 'DataSensors'),
-                where('userId', '==', userId),
-                where('createdAt', '>=', Timestamp.fromDate(startOfDay)),
-                where('createdAt', '<=', Timestamp.fromDate(endOfDay)),
-                orderBy('createdAt', 'asc')
-            );
-
-            const querySnapshot = await getDocs(healthDataQuery);
-            console.log(querySnapshot.empty);
-            const heartRates = [];
-            const spo2Values = [];
-            const timeLabels = [];
-
-            querySnapshot.forEach((doc) => {
-                const data = doc.data();
-                console.log(data);
-                heartRates.push(data?.heartRate || 0);
-                spo2Values.push(data?.spo2 || 0);
-                timeLabels.push(
-                    moment(data.createdAt.toDate()).format('HH:mm')
+        const userId = auth.currentUser?.uid;
+        if (!userId) return;
+        setLoading(true);
+        // Tạo query để lấy 10 bản ghi mới nhất
+        const healthDataQuery = query(
+            collection(db, 'DataSensors'),
+            where('userId', '==', userId),
+            orderBy('createdAt', 'desc'),
+            limit(10)
+        );
+        // Thiết lập listener realtime
+        const unsubscribe = onSnapshot(
+            healthDataQuery,
+            (snapshot) => {
+                const newData: HealthData[] = [];
+                snapshot.forEach((doc) => {
+                    const data = doc.data();
+                    console.log(data);
+                    newData.push({
+                        heartRate: data.heartRate || 0,
+                        spo2: data.spo2 || 0,
+                        createdAt: data.createdAt,
+                        timeLabel: moment(data.createdAt.toDate()).format(
+                            'HH:mm:ss'
+                        )
+                    });
+                });
+                // Sắp xếp lại theo thứ tự thời gian tăng dần để hiển thị trên biểu đồ
+                newData.sort(
+                    (a, b) =>
+                        a.createdAt.toDate().getTime() -
+                        b.createdAt.toDate().getTime()
                 );
-            });
-            console.log(heartRates, spo2Values);
-
-            // Nếu không có dữ liệu, tạo dữ liệu giả để demo
-            // if (heartRates.length === 0 && spo2Values.length === 0) {
-            //     // Tạo 6 mốc thời gian trong ngày
-            //     const mockTimes = [8, 10, 12, 14, 16, 18];
-
-            //     mockTimes.forEach((hour) => {
-            //         const mockHeartRate = Math.floor(65 + Math.random() * 25); // 65-90
-            //         const mockSpo2 = Math.floor(94 + Math.random() * 7); // 94-100
-
-            //         heartRates.push(mockHeartRate);
-            //         spo2Values.push(mockSpo2);
-            //         timeLabels.push(`${hour}:00`);
-            //     });
-            // }
-
-            setHeartRateData({
-                labels: timeLabels,
-                datasets: [
-                    {
-                        data: heartRates,
-                        color: (opacity = 1) => `rgba(255, 71, 87, ${opacity})`,
-                        strokeWidth: 2
-                    }
-                ]
-            });
-
-            setSpo2Data({
-                labels: timeLabels,
-                datasets: [
-                    {
-                        data: spo2Values,
-                        color: (opacity = 1) =>
-                            `rgba(46, 134, 222, ${opacity})`,
-                        strokeWidth: 2
-                    }
-                ]
-            });
-        } catch (error) {
-            console.error('Lỗi khi tải dữ liệu theo ngày:', error);
-        } finally {
-            setLoading(false);
-        }
+                setHealthData(newData);
+                // Cập nhật dữ liệu biểu đồ
+                updateChartData(newData);
+                setLoading(false);
+            },
+            (error) => {
+                console.error('Lỗi khi lấy dữ liệu realtime:', error);
+                setLoading(false);
+            }
+        );
+        return () => unsubscribe();
+    }, []);
+    // useEffect(() => {
+    //     updateChartData(healthData);
+    // }, [healthData]);
+    const updateChartData = (data: HealthData[]) => {
+        if (data.length === 0) return;
+        const labels = data.map((item) => item.timeLabel);
+        const heartRates = data.map((item) => item.heartRate);
+        const spo2Values = data.map((item) => item.spo2);
+        setHeartRateData({
+            labels,
+            datasets: [
+                {
+                    data: heartRates,
+                    color: (opacity = 1) => `rgba(255, 71, 87, ${opacity})`,
+                    strokeWidth: 2
+                }
+            ]
+        });
+        setSpo2Data({
+            labels,
+            datasets: [
+                {
+                    data: spo2Values,
+                    color: (opacity = 1) => `rgba(46, 134, 222, ${opacity})`,
+                    strokeWidth: 2
+                }
+            ]
+        });
     };
-
-    const changeDate = (days) => {
-        setSelectedDate(selectedDate.clone().add(days, 'days'));
-    };
-
     const chartConfig = {
         backgroundGradientFrom: '#ffffff',
         backgroundGradientTo: '#ffffff',
         decimalPlaces: 0,
         color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
         labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-        style: {
-            borderRadius: 16
-        },
+        style: { borderRadius: 16 },
         propsForDots: {
             r: '6',
             strokeWidth: '2'
         }
     };
-
     return (
         <View style={styles.container}>
-            <View style={styles.header}>
-                <Text style={styles.title}>Biểu đồ theo ngày</Text>
-            </View>
-
-            <View style={styles.dateSelector}>
-                <TouchableOpacity onPress={() => changeDate(-1)}>
-                    <Text style={styles.dateNavButton}>《</Text>
-                </TouchableOpacity>
-                <Text style={styles.dateText}>
-                    {selectedDate.format('dddd, DD/MM/YYYY')}
-                </Text>
-                <TouchableOpacity onPress={() => changeDate(1)}>
-                    <Text style={styles.dateNavButton}>》</Text>
-                </TouchableOpacity>
-            </View>
-
+            <Text style={styles.title}>Dữ liệu theo thời gian thực</Text>
+            <Text style={styles.subtitle}>10 lần đo gần nhất</Text>
             {loading ? (
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size='large' color='#FF4757' />
@@ -176,8 +157,7 @@ const DailyChartScreen = () => {
                 <ScrollView style={styles.scrollView}>
                     <View style={styles.chartContainer}>
                         <Text style={styles.chartTitle}>Nhịp tim (bpm)</Text>
-                        {heartRateData?.datasets &&
-                        heartRateData?.datasets[0].data.length > 0 ? (
+                        {heartRateData.datasets[0].data.length > 0 ? (
                             <ScrollView
                                 horizontal={true}
                                 showsHorizontalScrollIndicator={false}
@@ -210,8 +190,7 @@ const DailyChartScreen = () => {
 
                     <View style={styles.chartContainer}>
                         <Text style={styles.chartTitle}>SpO2 (%)</Text>
-                        {spo2Data?.datasets &&
-                        spo2Data?.datasets[0].data.length > 0 ? (
+                        {spo2Data.datasets[0].data.length > 0 ? (
                             <ScrollView
                                 horizontal={true}
                                 showsHorizontalScrollIndicator={false}
@@ -246,11 +225,12 @@ const DailyChartScreen = () => {
         </View>
     );
 };
-
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F9F9F9'
+        backgroundColor: '#F9F9F9',
+        borderRadius: 12,
+        marginTop: 20
     },
     header: {
         padding: 10,
@@ -261,7 +241,15 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 20,
         fontWeight: 'bold',
-        color: '#333'
+        color: '#333',
+        paddingLeft: 20,
+        marginTop: 20
+    },
+    subtitle: {
+        fontSize: 14,
+        color: '#666',
+        marginBottom: 16,
+        paddingLeft: 20
     },
     dateSelector: {
         flexDirection: 'row',
@@ -330,4 +318,4 @@ const styles = StyleSheet.create({
     }
 });
 
-export default DailyChartScreen;
+export default RealTimeChart;

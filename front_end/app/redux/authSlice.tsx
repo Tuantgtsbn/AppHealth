@@ -193,9 +193,11 @@ const authSlice = createSlice({
                 state.isAuthenticated = false;
                 state.error = null;
                 state.methodSigin = null;
+                state.loading = false;
             })
             .addCase(signOut.rejected, (state, action) => {
                 state.error = action.payload || 'Sign out failed';
+                state.loading = false;
             });
     }
 });

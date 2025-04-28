@@ -27,7 +27,9 @@
                 "foregroundImage": "./assets/images/adaptive-icon.png",
                 "backgroundColor": "#ffffff"
             },
-            "package": "com.exercise.app"
+            "package": "com.exercise.app",
+            "permissions": ["VIBRATE"],
+            "versionCode": 1
         },
         "web": {
             "bundler": "metro",
@@ -49,6 +51,23 @@
                 "expo-av",
                 {
                     "microphonePermission": false
+                }
+            ],
+            [
+                "expo-notifications",
+                {
+                    "icon": "./assets/images/notification-icon.png",
+                    "color": "#ffffff",
+                    "sounds": [
+                        "./assets/sounds/alert.mp3",
+                        "./assets/sounds/notifications.mp3"
+                    ]
+                }
+            ],
+            [
+                "expo-image-picker",
+                {
+                    "photosPermission": "Application needs permission to access your photos to select an image"
                 }
             ]
         ],

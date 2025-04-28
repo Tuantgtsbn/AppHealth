@@ -29,7 +29,7 @@ const HealthArticleCarousel = () => {
         (state: RootState) => state.article
     );
     const width = WINDOW_WIDTH * 0.85;
-    const height = WINDOW_HEIGHT * 0.25;
+    const height = WINDOW_HEIGHT * 0.35;
     useEffect(() => {
         async function fetchData() {
             try {
@@ -50,7 +50,7 @@ const HealthArticleCarousel = () => {
                 }}
                 activeOpacity={0.9}
             >
-                <Image source={item.thumbnail} style={styles.image} />
+                <Image source={{ uri: item.thumbnail }} style={styles.image} />
                 <View style={styles.textContainer}>
                     <Text style={styles.title}>{item.title}</Text>
                     <Text style={styles.description}>{item.timePublish}</Text>
@@ -71,21 +71,23 @@ const HealthArticleCarousel = () => {
                     <ActivityIndicator size='large' color='#FF4757' />
                 </View>
             ) : articles.length > 0 ? (
-                <Carousel
-                    loop
-                    width={width}
-                    height={height}
-                    data={articles}
-                    renderItem={renderItem}
-                    autoPlay={true}
-                    autoPlayInterval={3000}
-                    mode='parallax'
-                    modeConfig={{
-                        parallaxScrollingScale: 0.9,
-                        parallaxScrollingOffset: 50
-                    }}
-                    scrollAnimationDuration={1000}
-                />
+                <View className='justify-center items-center'>
+                    <Carousel
+                        loop
+                        width={width}
+                        height={height}
+                        data={articles}
+                        renderItem={renderItem}
+                        autoPlay={true}
+                        autoPlayInterval={3000}
+                        mode='parallax'
+                        modeConfig={{
+                            parallaxScrollingScale: 0.9,
+                            parallaxScrollingOffset: 50
+                        }}
+                        scrollAnimationDuration={1000}
+                    />
+                </View>
             ) : (
                 <Text>Không có bài viết nào</Text>
             )}

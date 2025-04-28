@@ -2,11 +2,12 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import HomeScreen from '../screens/HomeScreen/HomeScreen';
-import ProfileScreen from '../screens/ProfileScreen/ProfileScreen';
-import ExerciseScreen from '../screens/ExerciseScreen/ExerciseScreen';
-import HistoryScreen from '../screens/HistoryScreen/HistoryScreen';
+
+import HistoryScreen from '../screens/AnalyticsScreen/AnalyticsScreen';
 import ProfileStack from '@/screens/ProfileScreen/Layout';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import AnalyticsScreen from '../screens/AnalyticsScreen/AnalyticsScreen';
+import NotificationScreen from '@/screens/NotificationScreen/NotificationScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -44,16 +45,16 @@ const BottomTabNavigator = () => {
             <Tab.Screen
                 name='Home'
                 component={HomeScreen}
-                options={{ headerTitleAlign: 'center' }}
+                options={{ headerShown: false }}
             />
             <Tab.Screen
                 name='Analytics'
-                component={ExerciseScreen}
+                component={AnalyticsScreen}
                 options={{ headerTitleAlign: 'center' }}
             />
             <Tab.Screen
                 name='Notifications'
-                component={HistoryScreen}
+                component={NotificationScreen}
                 options={{ headerTitleAlign: 'center' }}
             />
             <Tab.Screen
