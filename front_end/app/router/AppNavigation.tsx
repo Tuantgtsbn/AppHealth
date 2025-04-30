@@ -1,15 +1,15 @@
-import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import React, { useEffect } from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
+import { NavigationContainer, useNavigation } from '@react-navigation/native';
 import BottomTabNavigator from './TabNavigator';
-import Welcome from '@/(auth)/onboarding/Welcome';
 import StackNavigationAuth from '@/(auth)/StackNavigation';
+// import modelService from '../services/modelService';
 
 const Stack = createStackNavigator();
 
 const AppNavigator = () => {
     return (
-        <Stack.Navigator initialRouteName='Auth'>
+        <Stack.Navigator id={'AppNavigator'} initialRouteName='Auth'>
             <Stack.Screen
                 name='Auth'
                 component={StackNavigationAuth}

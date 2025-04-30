@@ -38,7 +38,7 @@ export const fetchUserEmails = createAsyncThunk(
     async (userId: string, { rejectWithValue }) => {
         try {
             // Lấy danh sách email của người dùng từ Firestore
-            const emailRef = collection(db, 'Emails');
+            const emailRef = collection(db, 'AlertEmails');
             const q = query(
                 emailRef,
                 where('userId', '==', userId),
@@ -69,7 +69,7 @@ export const addEmail = createAsyncThunk(
     ) => {
         try {
             // Thêm email mới vào Firestore
-            const emailRef = collection(db, 'Emails');
+            const emailRef = collection(db, 'AlertEmails');
             const newEmail = {
                 email,
                 userId,
@@ -113,7 +113,7 @@ export const updateEmail = createAsyncThunk(
     ) => {
         try {
             // Cập nhật email trong Firestore
-            const emailRef = doc(db, 'Emails', emailId);
+            const emailRef = doc(db, 'AlertEmails', emailId);
             const updatedEmail = await getDoc(emailRef);
             if (!updatedEmail.exists()) {
                 throw new Error('Không tìm thấy email');
@@ -151,7 +151,7 @@ export const deleteEmail = createAsyncThunk(
     async (emailId: string, { rejectWithValue }) => {
         try {
             // Xóa email khỏi Firestore
-            const emailRef = doc(db, 'Emails', emailId);
+            const emailRef = doc(db, 'AlertEmails', emailId);
             await deleteDoc(emailRef);
             return emailId;
         } catch (error: any) {

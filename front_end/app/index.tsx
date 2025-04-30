@@ -1,22 +1,59 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import AppNavigator from './router/AppNavigation';
 import '../global.css';
 import { Provider } from 'react-redux';
 import { store } from './redux/store';
 import Toast from 'react-native-toast-message';
 import * as SplashScreen from 'expo-splash-screen';
-import { View } from 'react-native';
 import { NetworkProvider } from './context/NetWorkContext';
+// import modelService from '../ServicesAI/modelService';
+import { View } from 'react-native';
+
+// Giữ màn hình splash hiển thị cho đến khi ứng dụng sẵn sàng
+SplashScreen.preventAutoHideAsync();
+
 export default function Index() {
     const [appIsReady, setAppIsReady] = useState(false);
+
+    // useEffect(() => {
+    //     async function prepare() {
+    //         try {
+    //             // Tải mô hình trong try-catch để xử lý lỗi
+    //             await modelService.initModel().catch((error) => {
+    //                 console.warn(
+    //                     'Model loading error, continuing without model:',
+    //                     error
+    //                 );
+    //             });
+
+    //             // Đánh dấu ứng dụng đã sẵn sàng ngay cả khi mô hình không tải được
+    //             setAppIsReady(true);
+    //         } catch (error) {
+    //             console.warn('Error during app preparation:', error);
+    //             // Vẫn đánh dấu ứng dụng đã sẵn sàng để tránh bị treo
+    //             setAppIsReady(true);
+    //         }
+    //     }
+
+    //     prepare();
+    // }, []);
+    useEffect(() => {
+        async function fetchResourcesAsync() {
+            await new Promise((resolve) => setTimeout(resolve, 2000));
+            setAppIsReady(true);
+        }
+        fetchResourcesAsync();
+    }, []);
     const onLayoutRootView = useCallback(async () => {
         if (appIsReady) {
             await SplashScreen.hideAsync();
         }
     }, [appIsReady]);
+
     // if (!appIsReady) {
     //     return null;
     // }
+
     return (
         <>
             <NetworkProvider>

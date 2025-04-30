@@ -10,17 +10,13 @@ import moment from 'moment';
 import 'moment/locale/vi';
 import { addDoc, collection } from 'firebase/firestore';
 import { db } from '@config/firebase';
-import { saveOfflineSensorData } from '../app/utils/storageDataSensor';
+import {
+    saveOfflineSensorData,
+    syncOfflineSensorData
+} from '../app/utils/storageDataSensor';
 import NetInfo from '@react-native-community/netinfo';
-
+import DataSensor from '../types/dataSensor.types';
 moment.locale('vi');
-type DataSensor = {
-    userId: string;
-    sensorId: string;
-    createdAt: Timestamp;
-    heartRate: number;
-    spo2: number;
-};
 
 export const fakeDataFromSensor = (userId, sensorId) => {
     return {
@@ -64,6 +60,11 @@ export const sendDataSensorIntoFirestore = async (data: DataSensor) => {
             );
         }
     }
+};
+
+// Hàm mới để đồng bộ dữ liệu
+export const syncOfflineData = async () => {
+    return await syncOfflineSensorData(sendDataSensorIntoFirestore);
 };
 
 export const getLatestSensorData = async (userId: string) => {

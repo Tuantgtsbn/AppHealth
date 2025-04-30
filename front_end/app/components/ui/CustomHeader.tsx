@@ -1,7 +1,12 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import React from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import {
+    useNavigation,
+    ParamListBase,
+    StackActions
+} from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 
 interface CustomHeaderProps {
     title: string;
@@ -12,14 +17,29 @@ const CustomHeader: React.FC<CustomHeaderProps> = ({
     title,
     showBackButton = true
 }) => {
-    const navigation = useNavigation();
+    const navigation = useNavigation<StackNavigationProp<ParamListBase>>();
+
+    const handleGoBack = () => {
+        try {
+            if (navigation) {
+                if (navigation.canGoBack()) {
+                    navigation.goBack();
+                } else {
+                    // Fallback nếu không thể quay lại
+                    // Ví dụ: navigation.navigate('Home');
+                }
+            }
+        } catch (error) {
+            console.log('Navigation error:', error);
+        }
+    };
 
     return (
         <View style={styles.container}>
             {showBackButton ? (
                 <TouchableOpacity
                     style={styles.backButton}
-                    onPress={() => navigation.goBack()}
+                    onPress={handleGoBack}
                 >
                     <Ionicons name='chevron-back' size={24} color='#1D1617' />
                 </TouchableOpacity>

@@ -75,7 +75,6 @@ const RealTimeChart = () => {
                 const newData: HealthData[] = [];
                 snapshot.forEach((doc) => {
                     const data = doc.data();
-                    console.log(data);
                     newData.push({
                         heartRate: data.heartRate || 0,
                         spo2: data.spo2 || 0,
@@ -92,6 +91,7 @@ const RealTimeChart = () => {
                         b.createdAt.toDate().getTime()
                 );
                 setHealthData(newData);
+                console.log('Cập nhật dữ liệu realtime thành công');
                 // Cập nhật dữ liệu biểu đồ
                 updateChartData(newData);
                 setLoading(false);

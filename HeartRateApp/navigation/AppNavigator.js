@@ -12,6 +12,9 @@ import DailyChartScreen from '../screens/DailyChartScreen';
 import MonthlyChartScreen from '../screens/MonthlyChartScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import NotificationScreen from '../screens/NotificationScreen';
+import DetailNotificationScreen from '../screens/DetailNotificationScreen';
+
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -30,6 +33,8 @@ function MainTabNavigator() {
             iconName = focused ? 'calendar' : 'calendar-outline';
           } else if (route.name === 'Monthly') {
             iconName = focused ? 'bar-chart' : 'bar-chart-outline';
+          } else if (route.name === 'Notification') {
+            iconName = focused ? 'notifications' : 'notifications-outline';
           } else if (route.name === 'Profile') {
             iconName = focused ? 'person' : 'person-outline';
           }
@@ -42,10 +47,50 @@ function MainTabNavigator() {
         inactiveTintColor: 'gray',
       }}
     >
-      <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Daily" component={DailyChartScreen} />
-      <Tab.Screen name="Monthly" component={MonthlyChartScreen} />
-      <Tab.Screen name="Profile" component={ProfileScreen} />
+      <Tab.Screen 
+        name="Home" 
+        component={HomeScreen} 
+        options={{ 
+          title: 'Trang chủ', 
+          headerShown: false
+        }} 
+      />
+
+      <Tab.Screen 
+        name="Daily" 
+        component={DailyChartScreen} 
+        options={{ 
+          title: 'Hằng ngày',
+          headerShown: false
+        }} 
+      />
+
+      <Tab.Screen 
+        name="Monthly" 
+        component={MonthlyChartScreen} 
+        options={{ 
+          title: 'Hằng tháng',
+          headerShown: false
+        }} 
+      />
+
+      <Tab.Screen 
+        name="Notification" 
+        component={NotificationScreen} 
+        options={{ 
+          title: 'Thông báo', 
+          headerShown: false
+        }} 
+      />
+
+      <Tab.Screen 
+        name="Profile" 
+        component={ProfileScreen}
+        options={{
+          title: 'Hồ sơ', 
+          headerShown: false
+        }} 
+      />
     </Tab.Navigator>
   );
 }
@@ -59,6 +104,7 @@ function AppNavigator() {
         <Stack.Screen name="Register" component={RegisterScreen} />
         <Stack.Screen name="Main" component={MainTabNavigator} />
         <Stack.Screen name="Settings" component={SettingsScreen} />
+        <Stack.Screen name="DetailNotification" component={DetailNotificationScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

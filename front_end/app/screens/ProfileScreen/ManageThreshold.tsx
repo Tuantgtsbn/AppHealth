@@ -33,8 +33,22 @@ export default function ManageThreshold() {
                 updateUserProfile({
                     id,
                     profileData: {
-                        heartRateThreshold: newHeartRateThreshold,
-                        spo2Threshold: newSpo2Threshold
+                        heartRateThreshold: {
+                            min: newHeartRateThreshold.min
+                                ? Number(newHeartRateThreshold.min)
+                                : 60,
+                            max: newHeartRateThreshold.max
+                                ? Number(newHeartRateThreshold.max)
+                                : 100
+                        },
+                        spo2Threshold: {
+                            min: newSpo2Threshold.min
+                                ? Number(newSpo2Threshold.min)
+                                : 95,
+                            max: newSpo2Threshold.max
+                                ? Math.min(Number(newSpo2Threshold.max), 100)
+                                : 100
+                        }
                     }
                 })
             ).unwrap();

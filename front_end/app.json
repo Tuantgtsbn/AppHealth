@@ -59,8 +59,8 @@
                     "icon": "./assets/images/notification-icon.png",
                     "color": "#ffffff",
                     "sounds": [
-                        "./assets/sounds/alert.mp3",
-                        "./assets/sounds/notifications.mp3"
+                        "./assets/sounds/alert.wav",
+                        "./assets/sounds/notifications.wav"
                     ]
                 }
             ],
@@ -68,6 +68,12 @@
                 "expo-image-picker",
                 {
                     "photosPermission": "Application needs permission to access your photos to select an image"
+                }
+            ],
+            [
+                "expo-camera",
+                {
+                    "cameraPermission": "Application needs permission to access your camera to take a photo"
                 }
             ]
         ],

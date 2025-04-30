@@ -1,9 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import NetInfo from '@react-native-community/netinfo';
-import {
-    getPendingSyncCount,
-    syncOfflineSensorData
-} from '@/utils/storageDataSensor';
+import { getPendingSyncCount } from '@/utils/storageDataSensor';
+import { syncOfflineData } from '../../services/sensor.service';
 
 // Định nghĩa kiểu dữ liệu cho context
 type NetworkContextType = {

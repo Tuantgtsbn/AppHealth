@@ -3,11 +3,10 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import HomeScreen from '../screens/HomeScreen/HomeScreen';
 
-import HistoryScreen from '../screens/AnalyticsScreen/AnalyticsScreen';
 import ProfileStack from '@/screens/ProfileScreen/Layout';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import AnalyticsScreen from '../screens/AnalyticsScreen/AnalyticsScreen';
-import NotificationScreen from '@/screens/NotificationScreen/NotificationScreen';
+import NotificationStack from '@/screens/NotificationScreen/Layout';
 
 const Tab = createBottomTabNavigator();
 
@@ -39,24 +38,17 @@ const BottomTabNavigator = () => {
                     );
                 },
                 tabBarActiveTintColor: '#0088CC',
-                tabBarInactiveTintColor: 'gray'
+                tabBarInactiveTintColor: 'gray',
+                headerShown: false
             })}
         >
-            <Tab.Screen
-                name='Home'
-                component={HomeScreen}
-                options={{ headerShown: false }}
-            />
+            <Tab.Screen name='Home' component={HomeScreen} />
             <Tab.Screen
                 name='Analytics'
                 component={AnalyticsScreen}
                 options={{ headerTitleAlign: 'center' }}
             />
-            <Tab.Screen
-                name='Notifications'
-                component={NotificationScreen}
-                options={{ headerTitleAlign: 'center' }}
-            />
+            <Tab.Screen name='Notifications' component={NotificationStack} />
             <Tab.Screen
                 name='ProfileScreenStack'
                 component={ProfileStack}

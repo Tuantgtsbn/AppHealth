@@ -1,7 +1,7 @@
 import { RootState } from '@/redux/store';
 import { getUserProfile } from '@/redux/userSlice';
 import { auth } from '@config/firebase';
-import { Entypo, Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { AntDesign, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import {
     View,
@@ -10,10 +10,11 @@ import {
     TouchableOpacity,
     ScrollView,
     RefreshControl,
-    Alert
+    Alert,
+    Modal,
+    Button
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
-import HealthMetricCard from './components/HealthMetricCard';
 import {
     disconnectedDevice,
     setConnectedDevice
@@ -27,7 +28,13 @@ import {
     sendDataSensorIntoFirestore
 } from '@services/sensor.service';
 import DataSensor from '../../../types/dataSensor.types';
+import HealthArticleCarousel from './components/HealthArticleCarousel';
+import {
+    configureNotifications,
+    stopAlertSound
+} from '@services/notification.service';
 const HomeScreen = ({ navigation }) => {
+    const [isPlayingAlert, setIsPlayingAlert] = useState(false);
     const {
         isConnected: isNetWorkConnected,
         checkConnection,
@@ -40,8 +47,11 @@ const HomeScreen = ({ navigation }) => {
     const { isConnected, device } = useSelector(
         (state: RootState) => state.connectDevice
     );
-    const userId = auth.currentUser?.uid || 'jgr8crtfoRSr0ErsJlc75k7g1sl1';
+    const userId = auth.currentUser?.uid;
     const [valueOfSensor, setvalueOfSensor] = useState<DataSensor>(null);
+    useEffect(() => {
+        configureNotifications();
+    }, []);
     useEffect(() => {
         let idInterval;
         if (isConnected) {
@@ -53,6 +63,7 @@ const HomeScreen = ({ navigation }) => {
         }
         return () => clearInterval(idInterval);
     }, [isConnected]);
+    // Lấy thông tin chi tiết của người dùng.
     useEffect(() => {
         async function fetchDetailUser() {
             try {
@@ -143,6 +154,28 @@ const HomeScreen = ({ navigation }) => {
         }
         return null;
     };
+    const showHealthAlert = () => {
+        Alert.alert(
+            'Cảnh báo!',
+            'Phát hiện chỉ số sức khỏe bất thường. Vui lòng kiểm tra ngay!',
+            [
+                {
+                    text: 'Đóng cảnh báo',
+                    onPress: () => {
+                        setIsPlayingAlert(false);
+                        stopAlertSound();
+                    },
+                    style: 'cancel'
+                }
+            ],
+            { cancelable: true }
+        );
+    };
+    useEffect(() => {
+        if (isPlayingAlert) {
+            showHealthAlert();
+        }
+    }, [isPlayingAlert]);
     useEffect(() => {
         alertNetWorkDisconnected();
     }, [isNetWorkConnected]);
@@ -180,90 +213,95 @@ const HomeScreen = ({ navigation }) => {
                     <Ionicons name='settings-outline' size={24} color='#333' />
                 </TouchableOpacity>
             </View>
+            <View className='flex-1'>
+                <ScrollView
+                    style={styles.scrollView}
+                    refreshControl={
+                        <RefreshControl
+                            refreshing={refreshing}
+                            onRefresh={onRefresh}
+                            colors={['#FF4757']}
+                        />
+                    }
+                    className='bg-white'
+                >
+                    <View style={styles.metricsContainer}>
+                        <Text style={styles.sectionTitle}>
+                            Chỉ số sức khỏe hiện tại
+                        </Text>
 
-            <ScrollView
-                style={styles.scrollView}
-                refreshControl={
-                    <RefreshControl
-                        refreshing={refreshing}
-                        onRefresh={onRefresh}
-                        colors={['#FF4757']}
-                    />
-                }
-                className='bg-white'
-            >
-                <View style={styles.metricsContainer}>
-                    <Text style={styles.sectionTitle}>
-                        Chỉ số sức khỏe hiện tại
-                    </Text>
+                        <SectionHealthInfo
+                            value={valueOfSensor}
+                            setPlayingAlert={setIsPlayingAlert}
+                        />
+                        {!isConnected ? (
+                            <View>
+                                <Text className='font-bold text-[18px]'>
+                                    Chưa có thiết bị kết nối nào.
+                                </Text>
+                                <Card className='mt-[10px]'>
+                                    <TouchableOpacity
+                                        className='flex-row justify-between items-center'
+                                        onPress={handleStartConnectDevice}
+                                    >
+                                        <Text>Kết nối thiết bị nào</Text>
+                                        <View className='w-[40px] h-[40px] bg-green-500 rounded-full justify-center items-center'>
+                                            <MaterialIcons
+                                                name='bluetooth-connected'
+                                                size={24}
+                                                color='white'
+                                            />
+                                        </View>
+                                    </TouchableOpacity>
+                                </Card>
+                            </View>
+                        ) : (
+                            <View>
+                                <Text className='font-bold text-[18px]'>
+                                    Đã kết nối với thiết bị
+                                </Text>
+                                <Card className='mt-[10px]'>
+                                    <TouchableOpacity
+                                        className='flex-row justify-between items-center'
+                                        onPress={handleDisconnectDevice}
+                                    >
+                                        <Text>
+                                            {device?.nameDisplay ||
+                                                device?.nameDefault ||
+                                                'Unknown'}
+                                        </Text>
+                                        <View className='w-[40px] h-[40px] bg-primary rounded-full justify-center items-center'>
+                                            <MaterialIcons
+                                                name='bluetooth-disabled'
+                                                size={24}
+                                                color='white'
+                                            />
+                                        </View>
+                                    </TouchableOpacity>
+                                </Card>
+                            </View>
+                        )}
 
-                    <SectionHealthInfo value={valueOfSensor} />
-                    {!isConnected ? (
-                        <View>
-                            <Text className='font-bold text-[18px]'>
-                                Chưa có thiết bị kết nối nào.
+                        <View style={styles.thresholdInfoContainer}>
+                            <Text style={styles.thresholdTitle}>
+                                Ngưỡng cảnh báo:
                             </Text>
-                            <Card className='mt-[10px]'>
-                                <TouchableOpacity
-                                    className='flex-row justify-between items-center'
-                                    onPress={handleStartConnectDevice}
-                                >
-                                    <Text>Kết nối thiết bị nào</Text>
-                                    <View className='w-[40px] h-[40px] bg-green-500 rounded-full justify-center items-center'>
-                                        <MaterialIcons
-                                            name='bluetooth-connected'
-                                            size={24}
-                                            color='white'
-                                        />
-                                    </View>
-                                </TouchableOpacity>
-                            </Card>
-                        </View>
-                    ) : (
-                        <View>
-                            <Text className='font-bold text-[18px]'>
-                                Đã kết nối với thiết bị
+                            <Text style={styles.thresholdInfo}>
+                                Nhịp tim: {detailUser?.heartRateThreshold?.min}{' '}
+                                - {detailUser?.heartRateThreshold?.max} bpm
                             </Text>
-                            <Card className='mt-[10px]'>
-                                <TouchableOpacity
-                                    className='flex-row justify-between items-center'
-                                    onPress={handleDisconnectDevice}
-                                >
-                                    <Text>
-                                        {device?.nameDisplay ||
-                                            device?.nameDefault ||
-                                            'Unknown'}
-                                    </Text>
-                                    <View className='w-[40px] h-[40px] bg-primary rounded-full justify-center items-center'>
-                                        <MaterialIcons
-                                            name='bluetooth-disabled'
-                                            size={24}
-                                            color='white'
-                                        />
-                                    </View>
-                                </TouchableOpacity>
-                            </Card>
+                            <Text style={styles.thresholdInfo}>
+                                SpO2: {detailUser?.spo2Threshold?.min} -{' '}
+                                {detailUser?.spo2Threshold?.max}%
+                            </Text>
                         </View>
-                    )}
-
-                    <View style={styles.thresholdInfoContainer}>
-                        <Text style={styles.thresholdTitle}>
-                            Ngưỡng cảnh báo:
-                        </Text>
-                        <Text style={styles.thresholdInfo}>
-                            Nhịp tim: {detailUser?.heartRateThreshold?.min} -{' '}
-                            {detailUser?.heartRateThreshold?.max} bpm
-                        </Text>
-                        <Text style={styles.thresholdInfo}>
-                            SpO2: {detailUser?.spo2Threshold?.min} -{' '}
-                            {detailUser?.spo2Threshold?.max}%
-                        </Text>
+                        <View>
+                            <RealTimeChart />
+                        </View>
+                        <HealthArticleCarousel />
                     </View>
-                    <View>
-                        <RealTimeChart />
-                    </View>
-                </View>
-            </ScrollView>
+                </ScrollView>
+            </View>
         </View>
     );
 };
@@ -288,7 +326,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         padding: 20,
-        paddingTop: 50,
+        // paddingTop: 50,
         backgroundColor: 'white',
         borderBottomWidth: 1,
         borderBottomColor: '#F0F0F0'

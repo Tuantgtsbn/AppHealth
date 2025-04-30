@@ -14,6 +14,9 @@ export default function AnalyticsScreen() {
     const [isOpenMonthlyChart, setIsOpenMonthlyChart] = useState(false);
     return (
         <ScrollView style={styles.container}>
+            <Text className='font-bold text-3xl text-center mt-[10px]'>
+                Phân tích
+            </Text>
             <View style={styles.actionsContainer}>
                 <TouchableOpacity
                     style={styles.actionButton}

@@ -1,3 +1,5 @@
+import { Timestamp } from 'firebase/firestore';
+
 type DataSensor = {
     userId: string;
     sensorId: string;

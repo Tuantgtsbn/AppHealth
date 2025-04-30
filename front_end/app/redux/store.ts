@@ -5,6 +5,7 @@ import deviceReducer from './deviceSlice';
 import emailReducer from './emailSlice';
 import articleReducer from './articleSlice';
 import connectDeviceReducer from './connectDeviceSlice';
+import notificationReducer from './notificationSlice';
 export const store = configureStore({
     reducer: {
         auth: authReducer,
@@ -12,8 +13,13 @@ export const store = configureStore({
         device: deviceReducer,
         email: emailReducer,
         article: articleReducer,
-        connectDevice: connectDeviceReducer
-    }
+        connectDevice: connectDeviceReducer,
+        notification: notificationReducer
+    },
+    middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware({
+            serializableCheck: false // Tắt kiểm tra serialize
+        })
 });
 
 export type RootState = ReturnType<typeof store.getState>;

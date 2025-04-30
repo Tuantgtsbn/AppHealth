@@ -3,8 +3,6 @@ import { StyleSheet, View, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { RootState } from '@/redux/store';
 import { useSelector } from 'react-redux';
-import { useNetwork } from '@/context/NetWorkContext';
-import { fakeDataFromSensor } from '@services/sensor.service';
 
 const HealthMetricCard = ({
     title,
@@ -13,22 +11,8 @@ const HealthMetricCard = ({
     iconColor,
     createdAt = '',
     value,
-    field
+    isWarning
 }) => {
-    const { heartRateThreshold, spo2Threshold } = useSelector(
-        (state: RootState) => state.user?.detailUser
-    );
-    const isWarning = (() => {
-        if (field === 'heartRate') {
-            return (
-                value < heartRateThreshold?.min ||
-                value > heartRateThreshold?.max
-            );
-        } else if (field === 'spo2') {
-            return value < spo2Threshold?.min || value > spo2Threshold?.max;
-        }
-        return false;
-    })();
     return (
         <View style={[styles.card, isWarning && styles.warningCard]}>
             <View style={styles.iconContainer}>

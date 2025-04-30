@@ -86,6 +86,7 @@ export const updateUserProfile = createAsyncThunk(
         { rejectWithValue }
     ) => {
         try {
+            console.log('Cap nhat thong tin');
             if (!id) {
                 throw new Error('User ID is required');
             }

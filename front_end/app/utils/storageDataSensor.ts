@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Timestamp } from 'firebase/firestore';
-import { sendDataSensorIntoFirestore } from '../../services/sensor.service';
+// import { sendDataSensorIntoFirestore } from '../../services/sensor.service';
 
 import DataSensor from '../../types/dataSensor.types';
 const OFFLINE_STORAGE_KEY = 'offline_data';
@@ -35,9 +35,12 @@ export const saveOfflineSensorData = async (
 
 /**
  * Đồng bộ dữ liệu cảm biến từ bộ nhớ cục bộ lên Firebase khi có kết nối mạng
+ * @param sendToFirestore Hàm gửi dữ liệu lên Firestore
  * @returns Promise<{success: number, failed: number}> Số lượng bản ghi thành công và thất bại
  */
-export const syncOfflineSensorData = async (): Promise<{
+export const syncOfflineSensorData = async (
+    sendToFirestore: (data: DataSensor) => Promise<string>
+): Promise<{
     success: number;
     failed: number;
 }> => {
@@ -67,8 +70,8 @@ export const syncOfflineSensorData = async (): Promise<{
                     createdAt: Timestamp.fromDate(new Date(item.createdAt))
                 };
 
-                // Gửi dữ liệu lên Firebase
-                await sendDataSensorIntoFirestore(firestoreData);
+                // Gửi dữ liệu lên Firebase sử dụng hàm được truyền vào
+                await sendToFirestore(firestoreData);
                 successCount++;
             } catch (error) {
                 console.error('Lỗi khi đồng bộ bản ghi:', error);

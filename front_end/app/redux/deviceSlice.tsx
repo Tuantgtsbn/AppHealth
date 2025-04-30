@@ -37,7 +37,7 @@ export const fetchUserDevices = createAsyncThunk(
     'device/fetchUserDevices',
     async (userId: string, { rejectWithValue }) => {
         try {
-            const devicesRef = collection(db, 'Devices');
+            const devicesRef = collection(db, 'LinkedDevices');
             const q = query(
                 devicesRef,
                 where('userId', '==', userId),
