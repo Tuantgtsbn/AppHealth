@@ -1,23 +1,17 @@
 {
     "expo": {
-        "name": "exercise",
-        "slug": "exercise",
+        "name": "HeartRate",
+        "slug": "heartrateapp",
         "version": "1.0.0",
         "orientation": "portrait",
-        "icon": "./assets/images/icon.png",
-        "scheme": "exercise",
+        "icon": "./assets/images/icon3.png",
+        "scheme": "heartrateapp",
         "userInterfaceStyle": "automatic",
         "newArchEnabled": true,
         "splash": {
             "image": "./assets/images/new-splash-icon.png",
             "resizeMode": "contain",
             "backgroundColor": "#ffffff"
-        },
-        "fonts": {
-            "Poppins-Regular": "./assets/fonts/Poppins/Poppins-Regular.ttf",
-            "Poppins-Medium": "./assets/fonts/Poppins/Poppins-Medium.ttf",
-            "Poppins-SemiBold": "./assets/fonts/Poppins/Poppins-SemiBold.ttf",
-            "Poppins-Bold": "./assets/fonts/Poppins/Poppins-Bold.ttf"
         },
         "ios": {
             "supportsTablet": true
@@ -27,8 +21,18 @@
                 "foregroundImage": "./assets/images/adaptive-icon.png",
                 "backgroundColor": "#ffffff"
             },
-            "package": "com.exercise.app",
-            "permissions": ["VIBRATE"],
+            "package": "com.heartrate.app",
+            "permissions": [
+                "android.permission.VIBRATE",
+                "android.permission.BLUETOOTH",
+                "android.permission.BLUETOOTH_ADMIN",
+                "android.permission.BLUETOOTH_SCAN",
+                "android.permission.BLUETOOTH_CONNECT",
+                "android.permission.ACCESS_FINE_LOCATION",
+                "android.permission.MODIFY_AUDIO_SETTINGS",
+                "android.permission.RECORD_AUDIO",
+                "android.permission.CAMERA"
+            ],
             "versionCode": 1
         },
         "web": {
@@ -46,7 +50,6 @@
                     "backgroundColor": "#ffffff"
                 }
             ],
-
             [
                 "expo-av",
                 {
@@ -73,13 +76,33 @@
             [
                 "expo-camera",
                 {
-                    "cameraPermission": "Application needs permission to access your camera to take a photo"
+                    "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera",
+                    "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone",
+                    "recordAudioAndroid": true
+                }
+            ],
+            "react-native-ble-plx",
+            [
+                "expo-build-properties",
+                {
+                    "android": {
+                        "compileSdkVersion": 35,
+                        "targetSdkVersion": 35,
+                        "minSdkVersion": 26,
+                        "buildToolsVersion": "35.0.0"
+                    }
                 }
             ]
         ],
         "experiments": {
             "typedRoutes": true,
             "tsconfigPaths": true
-        }
+        },
+        "extra": {
+            "eas": {
+                "projectId": "ad3ec29d-4860-4cf1-84dd-fdf4fcf120df"
+            }
+        },
+        "owner": "nguye"
     }
 }

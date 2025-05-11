@@ -52,7 +52,7 @@ const ProfileScreen = ({ navigation }) => {
     const handleLogout = async () => {
         try {
             await dispatch(signOut()).unwrap();
-            navigation.navigate('Auth');
+            navigation.replace('Auth');
         } catch (error) {
             console.log(error);
         }

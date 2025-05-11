@@ -55,7 +55,7 @@ const LoginScreen = ({ navigation }) => {
                 text1: 'Thành công',
                 text2: 'Đăng nhập thành công'
             });
-            navigation.navigate('MainApp', { screen: 'Home' });
+            navigation.replace('MainApp', { screen: 'Home' });
         } catch (error) {
             Toast.show({
                 type: 'error',

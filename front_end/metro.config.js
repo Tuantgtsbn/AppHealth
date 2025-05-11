@@ -11,10 +11,6 @@ const jsonExtIndex = config.resolver.assetExts.indexOf('json');
 if (jsonExtIndex !== -1) {
     config.resolver.assetExts.splice(jsonExtIndex, 1);
 }
-// Thêm polyfills cho URL và các API web khác
-// config.resolver.extraNodeModules = {
-//     ...config.resolver.extraNodeModules,
-//     url: require.resolve('url/')
-// };
+
 module.exports = config;
 module.exports = withNativeWind(config, { input: './global.css' });

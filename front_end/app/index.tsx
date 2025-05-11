@@ -7,12 +7,13 @@ import Toast from 'react-native-toast-message';
 import * as SplashScreen from 'expo-splash-screen';
 import { NetworkProvider } from './context/NetWorkContext';
 // import modelService from '../ServicesAI/modelService';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { View } from 'react-native';
 
 // Giữ màn hình splash hiển thị cho đến khi ứng dụng sẵn sàng
 SplashScreen.preventAutoHideAsync();
 
-export default function Index() {
+export default function App() {
     const [appIsReady, setAppIsReady] = useState(false);
 
     // useEffect(() => {
@@ -39,7 +40,7 @@ export default function Index() {
     // }, []);
     useEffect(() => {
         async function fetchResourcesAsync() {
-            await new Promise((resolve) => setTimeout(resolve, 2000));
+            await new Promise((resolve) => setTimeout(resolve, 1000));
             setAppIsReady(true);
         }
         fetchResourcesAsync();
@@ -50,19 +51,21 @@ export default function Index() {
         }
     }, [appIsReady]);
 
-    // if (!appIsReady) {
-    //     return null;
-    // }
+    if (!appIsReady) {
+        return null;
+    }
 
     return (
         <>
             <NetworkProvider>
-                <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
+                <View onLayout={onLayoutRootView} style={{ flex: 1 }}>
                     <Provider store={store}>
-                        <AppNavigator />
+                        <SafeAreaProvider>
+                            <AppNavigator />
+                        </SafeAreaProvider>
                     </Provider>
-                    <Toast />
                 </View>
+                <Toast />
             </NetworkProvider>
         </>
     );
