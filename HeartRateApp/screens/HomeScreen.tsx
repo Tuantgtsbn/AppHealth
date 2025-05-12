@@ -14,11 +14,18 @@ import { doc, getDoc, collection, query, where, orderBy, limit, getDocs, setDoc 
 import HealthMetricCard from '../components/HealthMetricCard';
 import { configureNotifications, handleHealthAlert } from '../services/NotificationService';
 import BluetoothService from '../services/BluetoothService';
+import * as tf from '@tensorflow/tfjs';
+import loadModel from '../services/loadModel';
+import makePrediction from '../services/makePrediction';
 
 const HomeScreen = ({ navigation }) => {
   const [userName, setUserName] = useState('');
   const [heartRate, setHeartRate] = useState(null);
   const [spo2, setSpo2] = useState(null);
+  const [strokeRisk, setStrokeRisk] = useState(null); // State để lưu kết quả dự đoán đột quỵ
+  const [model, setModel] = useState(null); // State để lưu mô hình TensorFlow.js
+  const [modelLoading, setModelLoading] = useState(true); // State để theo dõi trạng thái tải mô hình
+  const [modelError, setModelError] = useState(null); // State để lưu lỗi khi tải mô hình
   const [thresholds, setThresholds] = useState({
     heartRate: { min: 60, max: 100 },
     spo2: { min: 95, max: 100 },
@@ -39,6 +46,81 @@ const HomeScreen = ({ navigation }) => {
   const [subscription, setSubscription] = useState(null);
 
   const bluetoothService = new BluetoothService();
+
+  // Dữ liệu đầu vào mẫu cho mô hình
+  const [userInput, setUserInput] = useState({
+    Age: 27,
+    Gender: 'Male',
+    Region: 'East',
+    'Urban/Rural': 'Urban',
+    SES: 'Middle',
+    'Smoking Status': 'Occasionally',
+    'Alcohol Consumption': 'Never',
+    'Diet Type': 'Vegetarian',
+    'Physical Activity Level': 'Sedentary',
+    'Screen Time (hrs/day)': 6,
+    'Sleep Duration (hrs/day)': 7,
+    'Family History of Heart Disease': 'No',
+    Diabetes: 'No',
+    Hypertension: 'No',
+    'Cholesterol Levels': 137,
+    BMI: 19,
+    'Stress Level': 'Medium',
+    'Blood Pressure': '177.1/90.0',
+    'Resting Heart Rate': 90,
+    'ECG Results': 'Normal',
+    'Chest Pain Type': 'Non-anginal',
+    'Maximum Heart Rate Achieved': 188,
+    'Exercise Induced Angina': 'No',
+    'Blood Oxygen Levels (SpO2%)': 80,
+    'Triglyceride Levels (mg/dL)': 102,
+  });
+
+  // Tải mô hình TensorFlow.js khi component được mount
+  useEffect(() => {
+    const fetchModel = async () => {
+      try {
+        setModelLoading(true);
+        await tf.setBackend('cpu');
+        await tf.ready();
+        const loadedModel = await loadModel();
+        setModel(loadedModel);
+        setModelError(null);
+      } catch (err) {
+        console.log('Không thể tải mô hình:', err);
+        setModelError('Không thể tải mô hình dự đoán. Vui lòng thử lại sau.');
+      } finally {
+        setModelLoading(false);
+      }
+    };
+
+    fetchModel();
+  }, []);
+
+  // Chạy dự đoán khi có dữ liệu từ Firebase hoặc Bluetooth
+  useEffect(() => {
+    if (model && (heartRate !== null || spo2 !== null)) {
+      const updatedInput = {
+        ...userInput,
+        'Resting Heart Rate': heartRate !== null ? heartRate : userInput['Resting Heart Rate'],
+        'Blood Oxygen Levels (SpO2%)': spo2 !== null ? spo2 : userInput['Blood Oxygen Levels (SpO2%)'],
+      };
+      setUserInput(updatedInput);
+
+      // Chạy dự đoán
+      const prediction = makePrediction(model, updatedInput);
+      prediction.then((result) => {
+        console.log('Prediction result:', result);
+        console.log('Type of result:', typeof result);
+        // Ép kiểu result thành số nếu nó là chuỗi
+        const numericResult = typeof result === 'string' ? parseFloat(result) : result;
+        setStrokeRisk(numericResult);
+      }).catch((err) => {
+        console.log('Lỗi khi dự đoán:', err);
+        setStrokeRisk(null);
+      });
+    }
+  }, [model, heartRate, spo2]);
 
   useEffect(() => {
     if (!auth || !db) {
@@ -88,21 +170,23 @@ const HomeScreen = ({ navigation }) => {
       const healthDataSnapshot = await getDocs(healthDataQuery);
       if (!healthDataSnapshot.empty) {
         const latestData = healthDataSnapshot.docs[0].data();
-        setHeartRate(latestData.heartRate);
-        setSpo2(latestData.spo2);
+        const newHeartRate = latestData.heartRate;
+        const newSpo2 = latestData.spo2;
 
-        const isHRWarning =
-          latestData.heartRate < thresholds.heartRate.min || latestData.heartRate > thresholds.heartRate.max;
-        const isSPO2Warning = latestData.spo2 < thresholds.spo2.min;
+        setHeartRate(newHeartRate);
+        setSpo2(newSpo2);
+
+        const isHRWarning = newHeartRate < thresholds.heartRate.min || newHeartRate > thresholds.heartRate.max;
+        const isSPO2Warning = newSpo2 < thresholds.spo2.min;
 
         setIsHeartRateWarning(isHRWarning);
         setIsSpo2Warning(isSPO2Warning);
 
         if (isHRWarning) {
-          handleHealthAlert(userId, 'heartRate', latestData.heartRate, thresholds.heartRate, userSettings);
+          handleHealthAlert(userId, 'heartRate', newHeartRate, thresholds.heartRate, userSettings);
         }
         if (isSPO2Warning) {
-          handleHealthAlert(userId, 'spo2', latestData.spo2, thresholds.spo2, userSettings);
+          handleHealthAlert(userId, 'spo2', newSpo2, thresholds.spo2, userSettings);
         }
       }
     } catch (error) {
@@ -170,8 +254,7 @@ const HomeScreen = ({ navigation }) => {
             setHeartRate(newHeartRate);
             setSpo2(newSpo2);
 
-            const isHRWarning =
-              newHeartRate < thresholds.heartRate.min || newHeartRate > thresholds.heartRate.max;
+            const isHRWarning = newHeartRate < thresholds.heartRate.min || newHeartRate > thresholds.heartRate.max;
             const isSPO2Warning = newSpo2 < thresholds.spo2.min;
 
             setIsHeartRateWarning(isHRWarning);
@@ -244,8 +327,7 @@ const HomeScreen = ({ navigation }) => {
           setHeartRate(newHeartRate);
           setSpo2(newSpo2);
 
-          const isHRWarning =
-            newHeartRate < thresholds.heartRate.min || newHeartRate > thresholds.heartRate.max;
+          const isHRWarning = newHeartRate < thresholds.heartRate.min || newHeartRate > thresholds.heartRate.max;
           const isSPO2Warning = newSpo2 < thresholds.spo2.min;
 
           setIsHeartRateWarning(isHRWarning);
@@ -287,6 +369,31 @@ const HomeScreen = ({ navigation }) => {
     </TouchableOpacity>
   );
 
+  const renderStrokeRisk = () => {
+    if (modelLoading) {
+      return <Text style={styles.strokeRiskText}>Đang tải mô hình...</Text>;
+    }
+    if (modelError) {
+      return <Text style={styles.strokeRiskText}>Lỗi tải mô hình</Text>;
+    }
+    if (strokeRisk === null || isNaN(strokeRisk)) {
+      return <Text style={styles.strokeRiskText}>Chưa có dữ liệu</Text>;
+    }
+
+    const isHighRisk = strokeRisk > 0.25;
+    return (
+      <View>
+        <Text style={styles.strokeRiskText}>Kết quả dự đoán: {strokeRisk}</Text>
+        <Text style={styles.riskLabel}>
+          Nguy cơ:{' '}
+          <Text style={[styles.riskValue, { color: isHighRisk ? '#FF0000' : '#00FF00' }]}>
+            {isHighRisk ? 'cao' : 'thấp'}
+          </Text>
+        </Text>
+      </View>
+    );
+  };
+
   const renderHeader = () => (
     <>
       <View style={styles.header}>
@@ -318,6 +425,16 @@ const HomeScreen = ({ navigation }) => {
           icon="water"
           iconColor="#2E86DE"
           isWarning={isSpo2Warning}
+        />
+
+        {/* Hiển thị nguy cơ đột quỵ */}
+        <HealthMetricCard
+          title="Nguy cơ đột quỵ"
+          value={renderStrokeRisk()}
+          unit=""
+          icon="warning"
+          iconColor="#FF9500"
+          isWarning={strokeRisk !== null && !isNaN(strokeRisk) && strokeRisk > 0.25}
         />
 
         <View style={styles.thresholdInfoContainer}>
@@ -400,16 +517,33 @@ const HomeScreen = ({ navigation }) => {
     </>
   );
 
-  if (error) {
+  if (error || modelError) {
     return (
       <View style={styles.loadingContainer}>
-        <Text style={styles.errorText}>{error}</Text>
+        <Text style={styles.errorText}>{error || modelError}</Text>
         <TouchableOpacity
           style={styles.retryButton}
           onPress={() => {
             setError(null);
+            setModelError(null);
             setLoading(true);
+            setModelLoading(true);
             loadUserData();
+            const fetchModel = async () => {
+              try {
+                await tf.setBackend('cpu');
+                await tf.ready();
+                const loadedModel = await loadModel();
+                setModel(loadedModel);
+                setModelError(null);
+              } catch (err) {
+                console.log('Không thể tải mô hình:', err);
+                setModelError('Không thể tải mô hình dự đoán. Vui lòng thử lại sau.');
+              } finally {
+                setModelLoading(false);
+              }
+            };
+            fetchModel();
           }}
         >
           <Text style={styles.retryButtonText}>Thử lại</Text>
@@ -418,7 +552,7 @@ const HomeScreen = ({ navigation }) => {
     );
   }
 
-  if (loading) {
+  if (loading || modelLoading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#FF4757" />
@@ -584,6 +718,20 @@ const styles = StyleSheet.create({
   deviceId: {
     fontSize: 12,
     color: '#666',
+  },
+  strokeRiskText: {
+    fontSize: 20,
+    color: '#333',
+    fontWeight: 'bold',
+  },
+  riskLabel: {
+    fontSize: 18,
+    color: '#333',
+    fontWeight: 'bold',
+  },
+  riskValue: {
+    fontSize: 18,
+    fontWeight: 'bold',
   },
 });
 
