@@ -33,20 +33,7 @@ export default function ManageDevices() {
         }
         fetchDevices();
     }, [id]);
-    const listDevices = [
-        {
-            id: 1,
-            name: 'Device 1'
-        },
-        {
-            id: 2,
-            name: 'Device 2'
-        },
-        {
-            id: 3,
-            name: 'Device 3'
-        }
-    ];
+
     const handleEditDevice = (item) => {
         setSelectedDeviceId(item.id);
         setIsOpenModalEdit(true);
@@ -61,6 +48,7 @@ export default function ManageDevices() {
     const [isOpenModalConfirmDelete, setIsOpenModalConfirmDelete] =
         useState(false);
     const handleConfirm = async () => {
+        console.log('Update device', selectedDeviceId, editedName);
         try {
             await dispatch(
                 updateDevice({

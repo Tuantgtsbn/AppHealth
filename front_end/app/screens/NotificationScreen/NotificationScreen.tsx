@@ -233,7 +233,7 @@ const NotificationScreen = ({ navigation }) => {
                 </View>
             </View>
 
-            {loading && refreshing ? (
+            {loading || refreshing ? (
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size='large' color='#FF4757' />
                     <Text style={styles.loadingText}>

@@ -1,5 +1,5 @@
 import { View, Text } from 'react-native';
-import React, { useEffect, useState } from 'react';
+import React, { memo, useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useNetwork } from '@/context/NetWorkContext';
 import { RootState } from '@/redux/store';
@@ -11,12 +11,14 @@ import {
     handleHealthAlert,
     sendAlertEmail
 } from '@services/notification.service';
-export default function SectionHealthInfo({
+export default memo(function SectionHealthInfo({
     value,
-    setPlayingAlert
+    setPlayingAlert,
+    refreshing
 }: {
     value: DataSensor;
     setPlayingAlert: any;
+    refreshing: boolean;
 }) {
     const { heartRateThreshold, spo2Threshold } = useSelector(
         (state: RootState) => state.user?.detailUser
@@ -33,6 +35,7 @@ export default function SectionHealthInfo({
     );
     const [latestData, setLatestData] = useState(null);
     const fetchLatestSensorData = async () => {
+        console.log('fetch tai section health info');
         const result = await getLatestSensorData(
             auth.currentUser.uid || 'jgr8crtfoRSr0ErsJlc75k7g1sl1'
         );
@@ -42,8 +45,10 @@ export default function SectionHealthInfo({
     };
     const userId = auth.currentUser?.uid;
     useEffect(() => {
-        fetchLatestSensorData();
-    }, [isNetWorkConnected, isConnected]);
+        if (isNetWorkConnected || refreshing) {
+            fetchLatestSensorData();
+        }
+    }, [isNetWorkConnected, refreshing]);
     const checkWarning = () => {
         if (!isConnected) {
             if (
@@ -149,4 +154,4 @@ export default function SectionHealthInfo({
             )}
         </View>
     );
-}
+});

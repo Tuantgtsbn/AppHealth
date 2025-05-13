@@ -68,6 +68,14 @@ export const addDevice = createAsyncThunk(
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString()
             };
+            const q = query(
+                deviceRef,
+                where('deviceId', '==', deviceData.deviceId)
+            );
+            const querySnapshot = await getDocs(q);
+            if (!querySnapshot.empty) {
+                return rejectWithValue('Thiết bị đã tồn tại');
+            }
             const docRef = await addDoc(deviceRef, newDevice);
             const newDeviceDoc = await getDoc(docRef);
             if (!newDeviceDoc.exists()) {
@@ -94,7 +102,7 @@ export const updateDevice = createAsyncThunk(
         { rejectWithValue }
     ) => {
         try {
-            const deviceRef = doc(db, 'Devices', deviceId);
+            const deviceRef = doc(db, 'LinkedDevices', deviceId);
             const updatedDevice = await getDoc(deviceRef);
             if (!updatedDevice.exists()) {
                 throw new Error('Không tìm thấy thiết bị');

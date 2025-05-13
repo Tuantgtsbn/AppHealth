@@ -73,6 +73,7 @@ export default function ManageThreshold() {
                     <Text className='font-bold text-xl'>Nhịp tim</Text>
                     <Text>Ngưỡng dưới</Text>
                     <TextInput
+                        className='border border-gray-300 rounded-md px-[10px] py-[13px] text-xl'
                         value={newHeartRateThreshold.min}
                         onChangeText={(text) =>
                             setNewHeartRateThreshold({
@@ -83,6 +84,7 @@ export default function ManageThreshold() {
                     />
                     <Text>Ngưỡng trên</Text>
                     <TextInput
+                        className='border border-gray-300 rounded-md px-[10px] py-[13px] text-xl'
                         value={newHeartRateThreshold.max}
                         onChangeText={(text) =>
                             setNewHeartRateThreshold({
@@ -96,6 +98,7 @@ export default function ManageThreshold() {
                     <Text className='font-bold text-xl'>SpO2</Text>
                     <Text>Ngưỡng dưới</Text>
                     <TextInput
+                        className='border border-gray-300 rounded-md px-[10px] py-[13px] text-xl'
                         value={newSpo2Threshold.min}
                         onChangeText={(text) =>
                             setNewSpo2Threshold({
@@ -106,6 +109,7 @@ export default function ManageThreshold() {
                     />
                     <Text>Ngưỡng trên</Text>
                     <TextInput
+                        className='border border-gray-300 rounded-md px-[10px] py-[13px] text-xl'
                         value={newSpo2Threshold.max}
                         onChangeText={(text) =>
                             setNewSpo2Threshold({

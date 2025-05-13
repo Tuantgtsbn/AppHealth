@@ -1,7 +1,7 @@
 import { BleManager, Device } from 'react-native-ble-plx';
-import { PermissionsAndroid } from 'react-native';
-
-export default class BluetoothService {
+import { PermissionsAndroid, Platform, NativeModules } from 'react-native';
+let instance: BluetoothService | null = null;
+export class BluetoothService {
     private manager: BleManager;
     private device: Device | null;
     private isConnected: boolean;
@@ -9,14 +9,29 @@ export default class BluetoothService {
     private isScanning: boolean;
 
     constructor() {
+        if (instance) {
+            return instance;
+        }
         this.manager = new BleManager();
         this.device = null;
         this.isConnected = false;
         this.devices = new Map();
         this.isScanning = false;
+        instance = this;
     }
-
+    static getInstance(): BluetoothService {
+        if (!instance) {
+            instance = new BluetoothService();
+        }
+        return instance;
+    }
+    getIsScanning() {
+        return this.isScanning;
+    }
     async requestBluetoothPermission(): Promise<boolean> {
+        if (Platform.OS !== 'android') {
+            return true;
+        }
         try {
             const granted = await PermissionsAndroid.requestMultiple([
                 PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN,
@@ -42,7 +57,7 @@ export default class BluetoothService {
     ): Promise<void> {
         if (this.isScanning) {
             console.log('Already scanning, stopping previous scan');
-            this.stopScan();
+            await this.stopScan();
         }
 
         const permissionGranted = await this.requestBluetoothPermission();
@@ -53,12 +68,13 @@ export default class BluetoothService {
 
         this.devices.clear();
         this.isScanning = true;
-        this.manager.startDeviceScan(null, null, (error, device) => {
+        await this.manager.startDeviceScan(null, null, (error, device) => {
             if (error) {
                 console.error('Error scanning:', error);
                 this.isScanning = false;
                 return;
             }
+            // console.log('Scanning device:', device);
             if (device && device.name) {
                 this.devices.set(device.id, device);
                 onDevicesUpdate(Array.from(this.devices.values()));
@@ -66,9 +82,9 @@ export default class BluetoothService {
         });
     }
 
-    stopScan(): void {
+    async stopScan(): Promise<void> {
         if (this.isScanning) {
-            this.manager.stopDeviceScan();
+            await this.manager.stopDeviceScan();
             this.isScanning = false;
             console.log('Stopped scanning');
         }
@@ -180,4 +196,136 @@ export default class BluetoothService {
             console.log('Disconnect completed, device state reset');
         }
     }
+
+    // Thêm phương thức kiểm tra và bật Bluetooth
+    async enableBluetooth(): Promise<boolean> {
+        try {
+            // Kiểm tra xem Bluetooth có được bật không
+            const state = await this.manager.state();
+
+            if (state === 'PoweredOn') {
+                console.log('Bluetooth đã được bật');
+                return true;
+            }
+
+            if (Platform.OS === 'android') {
+                console.log('Yêu cầu người dùng bật Bluetooth');
+                // Trên Android, yêu cầu người dùng bật Bluetooth
+                const { BluetoothAdapter } = NativeModules;
+                if (BluetoothAdapter && BluetoothAdapter.enableBluetooth) {
+                    const result = await BluetoothAdapter.enableBluetooth();
+                    return result;
+                } else {
+                    console.log(
+                        'Không thể bật Bluetooth tự động, yêu cầu người dùng bật thủ công'
+                    );
+                    return false;
+                }
+            } else {
+                // Trên iOS, không thể bật Bluetooth theo chương trình
+                console.log(
+                    'Trên iOS, không thể bật Bluetooth tự động, yêu cầu người dùng bật thủ công'
+                );
+                return false;
+            }
+        } catch (error) {
+            console.error('Lỗi khi bật Bluetooth:', error);
+            return false;
+        }
+    }
+
+    // Phương thức quét và hiển thị tất cả thiết bị Bluetooth (không lọc)
+    async scanAllDevices(
+        onDevicesUpdate: (devices: Device[]) => void,
+        timeoutMs: number = 10000
+    ): Promise<void> {
+        if (this.isScanning) {
+            console.log('Đang quét, dừng quét trước đó');
+            await this.stopScan();
+        }
+
+        // Kiểm tra quyền và bật Bluetooth
+        const permissionGranted = await this.requestBluetoothPermission();
+        if (!permissionGranted) {
+            console.error('Không được cấp quyền Bluetooth');
+            return;
+        }
+
+        try {
+            const bluetoothState = await this.getBluetoothState();
+            if (bluetoothState !== 'PoweredOn') {
+                console.log(
+                    'Bluetooth không được bật, trạng thái:',
+                    bluetoothState
+                );
+                const bluetoothEnabled = await this.enableBluetooth();
+                if (!bluetoothEnabled) {
+                    console.error('Bluetooth chưa được bật');
+                    return;
+                }
+            }
+
+            this.devices.clear();
+            this.isScanning = true;
+
+            // Bắt đầu quét tất cả thiết bị, không lọc
+            // Thêm tùy chọn allowDuplicates: true để nhận được nhiều gói quảng cáo từ cùng một thiết bị
+            const scanOptions = {
+                allowDuplicates: true
+            };
+            // Tự động dừng quét sau khoảng thời gian
+            setTimeout(() => {
+                if (this.isScanning) {
+                    this.stopScan();
+                    console.log('Đã dừng quét sau', timeoutMs, 'ms');
+                }
+            }, timeoutMs);
+            this.manager.startDeviceScan(null, scanOptions, (error, device) => {
+                if (error) {
+                    console.error('Lỗi khi quét:', error);
+                    this.isScanning = false;
+                    return;
+                }
+
+                if (device && device.name) {
+                    // Log chi tiết về thiết bị để debug
+                    // console.log('Thiết bị được tìm thấy:', {
+                    //     id: device.id,
+                    //     name: device.name,
+                    //     localName: device.localName,
+                    //     manufacturerData: device.manufacturerData,
+                    //     serviceUUIDs: device.serviceUUIDs,
+                    //     rssi: device.rssi
+                    // });
+
+                    // Lưu thiết bị vào Map
+                    this.devices.set(device.id, device);
+
+                    // Gọi callback với danh sách thiết bị hiện tại
+                    onDevicesUpdate(Array.from(this.devices.values()));
+                }
+            });
+        } catch (error) {
+            console.error('Lỗi trong quá trình quét thiết bị:', error);
+            this.isScanning = false;
+        }
+    }
+
+    // Phương thức lấy thông tin thiết bị
+    getDeviceInfo(deviceId: string): Device | null {
+        return this.devices.get(deviceId) || null;
+    }
+
+    // Phương thức kiểm tra trạng thái Bluetooth
+    async getBluetoothState(): Promise<string> {
+        try {
+            const state = await this.manager.state();
+            return state; // 'Unknown', 'Resetting', 'Unsupported', 'Unauthorized', 'PoweredOff', 'PoweredOn'
+        } catch (error) {
+            console.error('Lỗi khi kiểm tra trạng thái Bluetooth:', error);
+            return 'Unknown';
+        }
+    }
 }
+
+export default BluetoothService.getInstance();
