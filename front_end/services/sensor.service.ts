@@ -27,7 +27,15 @@ export const fakeDataFromSensor = (userId, sensorId) => {
         spo2: Math.floor(80 + Math.random() * 21)
     };
 };
-
+export const createDataFromSensor = (userId, sensorId, heartRate, spo2) => {
+    return {
+        userId,
+        sensorId,
+        createdAt: Timestamp.now(),
+        heartRate,
+        spo2
+    };
+};
 export const sendDataSensorIntoFirestore = async (data: DataSensor) => {
     try {
         // Kiểm tra kết nối mạng trước khi gửi dữ liệu
