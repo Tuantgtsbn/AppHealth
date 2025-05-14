@@ -3,6 +3,8 @@ import { getUserProfile } from '@/redux/userSlice';
 import { auth } from '@config/firebase';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import React, { useEffect, useState, useRef, useCallback } from 'react';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import {
     View,
     Text,
@@ -12,6 +14,8 @@ import {
     RefreshControl,
     Alert,
     Modal,
+    FlatList,
+    ActivityIndicator
     FlatList,
     ActivityIndicator
 } from 'react-native';
@@ -26,6 +30,7 @@ import { useNetwork } from '@/context/NetWorkContext';
 import SectionHealthInfo from './components/SectionHealthInfo';
 import {
     createDataFromSensor,
+    createDataFromSensor,
     fakeDataFromSensor,
     sendDataSensorIntoFirestore
 } from '@services/sensor.service';
@@ -34,6 +39,17 @@ import {
     configureNotifications,
     stopAlertSound
 } from '@services/notification.service';
+import { BluetoothService } from '../../../services/BluetoothService';
+import { Device } from 'react-native-ble-plx';
+import { addDevice, fetchUserDevices } from '@/redux/deviceSlice';
+import { useFocusEffect } from '@react-navigation/native';
+// UUID của service và characteristic
+const SENSOR_SERVICE_UUID = '4fafc201-1fb5-459e-8fcc-c5c9c331914b';
+const SENSOR_CHARACTERISTIC_UUID = 'beb5483e-36e1-4688-b7f5-ea07361b26a8';
+type DeviceBluetooth = Device & {
+    nameDisplay: string;
+    hasBeenConnected: boolean;
+};
 import { BluetoothService } from '../../../services/BluetoothService';
 import { Device } from 'react-native-ble-plx';
 import { addDevice, fetchUserDevices } from '@/redux/deviceSlice';
@@ -62,8 +78,22 @@ const HomeScreen = ({ navigation }) => {
     const { devices: userDevices } = useSelector(
         (state: RootState) => state.device
     );
+    const { devices: userDevices } = useSelector(
+        (state: RootState) => state.device
+    );
     const userId = auth.currentUser?.uid;
     const [valueOfSensor, setvalueOfSensor] = useState<DataSensor>(null);
+    const [periodicReadingInterval, setPeriodicReadingInterval] =
+        useState(null);
+    // Thêm state cho Bluetooth
+    const [bluetoothModalVisible, setBluetoothModalVisible] = useState(false);
+    const [isScanning, setIsScanning] = useState(false);
+    const [devices, setDevices] = useState<DeviceBluetooth[]>([]);
+    const [bluetoothState, setBluetoothState] = useState<string>('Unknown');
+    const bluetoothService = useRef<BluetoothService>(
+        BluetoothService.getInstance()
+    ).current;
+    const [error, setError] = useState<string | null>(null);
     const [periodicReadingInterval, setPeriodicReadingInterval] =
         useState(null);
     // Thêm state cho Bluetooth
@@ -533,6 +563,8 @@ const HomeScreen = ({ navigation }) => {
         setRefreshing(true);
         const isConnectedInternet = await checkConnection();
         if (isConnectedInternet) {
+        const isConnectedInternet = await checkConnection();
+        if (isConnectedInternet) {
             try {
                 await dispatch(getUserProfile(userId)).unwrap();
                 await dispatch(fetchUserDevices(userId)).unwrap();
@@ -540,6 +572,7 @@ const HomeScreen = ({ navigation }) => {
                 console.log(error);
             }
         }
+        setRefreshing(false);
         setRefreshing(false);
     };
     // Hiển thị cảnh báo khi không có kết nối mạng
@@ -579,6 +612,7 @@ const HomeScreen = ({ navigation }) => {
                 <View className='flex-row gap-2 items-center mt-[16px]'>
                     <Text>{pendingSyncCount} dữ liệu đang chờ đồng bộ</Text>
                     {!isNetWorkConnected && (
+                    {!isNetWorkConnected && (
                         <TouchableOpacity
                             onPress={async () => {
                                 const result = await syncOfflineData();
@@ -608,6 +642,7 @@ const HomeScreen = ({ navigation }) => {
         return null;
     };
     console.log('isConected', isConnected);
+    console.log('isConected', isConnected);
     const showHealthAlert = () => {
         Alert.alert(
             'Cảnh báo!',
@@ -634,6 +669,7 @@ const HomeScreen = ({ navigation }) => {
         alertNetWorkDisconnected();
     }, [isNetWorkConnected]);
     // Thay đổi hàm kết nối thiết bị để mở modal Bluetooth
+    // Thay đổi hàm kết nối thiết bị để mở modal Bluetooth
     const handleStartConnectDevice = async () => {
         setBluetoothModalVisible(true);
     };
@@ -641,7 +677,18 @@ const HomeScreen = ({ navigation }) => {
     const handleDisconnectDevice = async () => {
         try {
             await bluetoothService.disconnect();
+        setBluetoothModalVisible(true);
+    };
+
+    const handleDisconnectDevice = async () => {
+        try {
+            await bluetoothService.disconnect();
             dispatch(disconnectedDevice());
+            Alert.alert('Thông báo', 'Đã ngắt kết nối thiết bị');
+        } catch (error) {
+            console.error('Lỗi khi ngắt kết nối:', error);
+            Alert.alert('Lỗi', 'Không thể ngắt kết nối thiết bị');
+        }
             Alert.alert('Thông báo', 'Đã ngắt kết nối thiết bị');
         } catch (error) {
             console.error('Lỗi khi ngắt kết nối:', error);
@@ -757,6 +804,25 @@ const HomeScreen = ({ navigation }) => {
                         refreshing={refreshing}
                     />
 
+                    <View style={styles.thresholdInfoContainer}>
+                        <Text style={styles.thresholdTitle}>
+                            Ngưỡng cảnh báo:
+                        </Text>
+                        <Text style={styles.thresholdInfo}>
+                            Nhịp tim: {detailUser?.heartRateThreshold?.min} -{' '}
+                            {detailUser?.heartRateThreshold?.max} bpm
+                        </Text>
+                        <Text style={styles.thresholdInfo}>
+                            SpO2: {detailUser?.spo2Threshold?.min} -{' '}
+                            {detailUser?.spo2Threshold?.max}%
+                        </Text>
+                    </View>
+                    <View>
+                        <RealTimeChart />
+                    </View>
+                    {/* <HealthArticleCarousel /> */}
+                </View>
+            </ScrollView>
                     <View style={styles.thresholdInfoContainer}>
                         <Text style={styles.thresholdTitle}>
                             Ngưỡng cảnh báo:
