@@ -13,7 +13,7 @@ const Tab = createBottomTabNavigator();
 const BottomTabNavigator = () => {
     return (
         <Tab.Navigator
-            screenOptions={({ route }) => ({
+            screenOptions={({ route, navigation }) => ({
                 tabBarIcon: ({ focused, color, size }) => {
                     let iconName;
                     if (route.name === 'Home') {
@@ -39,7 +39,16 @@ const BottomTabNavigator = () => {
                 },
                 tabBarActiveTintColor: '#0088CC',
                 tabBarInactiveTintColor: 'gray',
-                headerShown: false
+                headerShown: false,
+                tabBarStyle: (() => {
+                    const state = navigation.getState();
+                    const routes = state.routes;
+                    const currentRoute = routes[state.index];
+                    if (currentRoute.state && currentRoute.state.index > 0) {
+                        return { display: 'none' };
+                    }
+                    return undefined;
+                })()
             })}
         >
             <Tab.Screen name='Home' component={HomeScreen} />

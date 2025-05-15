@@ -7,7 +7,8 @@ import {
     KeyboardAvoidingView,
     Platform,
     ScrollView,
-    TouchableOpacity
+    TouchableOpacity,
+    ActivityIndicator
 } from 'react-native';
 import React, { useState } from 'react';
 import CustomHeader from '@/components/ui/CustomHeader';
@@ -52,6 +53,7 @@ export default function EditProfile({ navigation }) {
     const { uid: id } = useSelector(
         (state: RootState) => state.auth?.user || 'jgr8crtfoRSr0ErsJlc75k7g1sl1'
     );
+    const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState<FormDataType>({
         nameDisplay,
         email: email || '',
@@ -109,12 +111,14 @@ export default function EditProfile({ navigation }) {
         }
     };
     const handleEditProfile = async () => {
+        setLoading(true);
         if (!parseFloat(heightInput) || !parseFloat(weightInput)) {
             Toast.show({
                 type: 'error',
                 text1: 'Lỗi',
                 text2: 'Vui lòng nhập đúng định dạng số'
             });
+            setLoading(false);
             return;
         }
 
@@ -151,6 +155,8 @@ export default function EditProfile({ navigation }) {
                 text1: 'Lỗi',
                 text2: error
             });
+        } finally {
+            setLoading(false);
         }
     };
     return (
@@ -356,12 +362,19 @@ export default function EditProfile({ navigation }) {
                                 />
                             )}
                             <TouchableOpacity
-                                className='bg-primary rounded-full py-4 mt-8'
+                                disabled={loading}
+                                className='bg-primary rounded-full py-4 mt-8 flex-row gap-2 justify-center mb-5'
                                 onPress={handleEditProfile}
                             >
                                 <Text className='text-white font-bold text-3xl text-center'>
                                     Lưu
                                 </Text>
+                                {loading && (
+                                    <ActivityIndicator
+                                        size={'small'}
+                                        color={'white'}
+                                    />
+                                )}
                             </TouchableOpacity>
                         </View>
                     </View>

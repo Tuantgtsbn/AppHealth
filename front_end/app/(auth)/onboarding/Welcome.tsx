@@ -1,7 +1,13 @@
 import { View, Text, Image, TouchableOpacity } from 'react-native';
 import React from 'react';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/redux/store';
 
 export default function Welcome({ navigation }) {
+    const { isAuthenticated } = useSelector((state: RootState) => state.auth);
+    if (isAuthenticated) {
+        navigation.replace('MainApp', { screen: 'Home' });
+    }
     return (
         <View className='flex-1 px-[30px] justify-center items-center gap-[30px]'>
             <Text className='text-[30px] font-bold text-center w-[160px]'>

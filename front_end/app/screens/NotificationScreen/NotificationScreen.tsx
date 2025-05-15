@@ -47,11 +47,9 @@ const NotificationScreen = ({ navigation }) => {
     // useEffect(() => {
     //     fetchAlertHistory();
     // }, []);
-    useFocusEffect(
-        useCallback(() => {
-            fetchAlertHistory();
-        }, [])
-    );
+    useEffect(() => {
+        fetchAlertHistory();
+    }, []);
 
     // Pull-to-refresh
     const onRefresh = useCallback(async () => {

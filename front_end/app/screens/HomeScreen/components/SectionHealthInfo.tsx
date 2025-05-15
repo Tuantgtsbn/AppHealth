@@ -72,9 +72,16 @@ export default memo(function SectionHealthInfo({
     const predict = async (heartRate, spo2) => {
         if (modelService && modelService.getModel()) {
             try {
+                let heightMeter =
+                    height.unit === 'cm'
+                        ? parseFloat(height.value) / 100
+                        : parseFloat(height.value);
+                let weightKg =
+                    weight.unit === 'bound'
+                        ? parseFloat(weight.value) * 0.453592
+                        : parseFloat(weight.value);
                 const BMI =
-                    parseFloat(weight.value) /
-                    (parseFloat(height.value) / 100) ** 2;
+                    Math.floor((weightKg / heightMeter ** 2) * 100) / 100;
                 const Age =
                     new Date().getFullYear() -
                     new Date(dateOfBirth).getFullYear();
