@@ -69,9 +69,11 @@ export default memo(function SectionHealthInfo({
             loadModal();
         }
     }, []);
+    const [accuracy, setAccuracy] = useState(0);
     const predict = async (heartRate, spo2) => {
         if (modelService && modelService.getModel()) {
             try {
+                console.log('chieu cao la     fdjfhdjf', height.value);
                 let heightMeter =
                     height.unit === 'cm'
                         ? parseFloat(height.value) / 100
@@ -80,8 +82,9 @@ export default memo(function SectionHealthInfo({
                     weight.unit === 'bound'
                         ? parseFloat(weight.value) * 0.453592
                         : parseFloat(weight.value);
-                const BMI =
-                    Math.floor((weightKg / heightMeter ** 2) * 100) / 100;
+                console.log('heightMeter', heightMeter);
+                console.log('weightKg', weightKg);
+                const BMI = Math.floor(weightKg / heightMeter ** 2);
                 const Age =
                     new Date().getFullYear() -
                     new Date(dateOfBirth).getFullYear();
@@ -147,7 +150,10 @@ export default memo(function SectionHealthInfo({
         } else {
             let result = '';
             try {
+                console.log('value', value);
                 result = await predict(value?.heartRate || 0, value?.spo2 || 0);
+                console.log('Ket qua du doan', result);
+                setAccuracy(Number(result));
                 if (Number(result) > 0.25) {
                     setIsWarningHeartRate(true);
                     setIsWarningSpo2(true);
@@ -185,7 +191,7 @@ export default memo(function SectionHealthInfo({
                 value?.heartRate > (heartRateThreshold?.max || 100)
             ) {
                 setIsWarningHeartRate(true);
-                setPlayingAlert(true);
+
                 handleHealthAlert(
                     userId,
                     'heartRate',
@@ -201,7 +207,7 @@ export default memo(function SectionHealthInfo({
                 value?.spo2 > (spo2Threshold?.max || 100)
             ) {
                 setIsWarningSpo2(true);
-                setPlayingAlert(true);
+
                 handleHealthAlert(
                     userId,
                     'spo2',
@@ -216,7 +222,7 @@ export default memo(function SectionHealthInfo({
     };
     useEffect(() => {
         checkWarning();
-    }, [value?.createdAt.toMillis(), latestData?.createdAt.toMillis()]);
+    }, [value?.createdAt?.toMillis(), latestData?.createdAt?.toMillis()]);
     return (
         <View>
             {!isConnected ? (
@@ -285,10 +291,10 @@ export default memo(function SectionHealthInfo({
                         icon={'warning'}
                         title={'Nguy cơ đột quỵ'}
                         unit={'%'}
-                        value={value?.accuracy}
+                        value={accuracy}
                         createdAt={value?.createdAt.toDate().toLocaleString()}
                         iconColor={'#FFD700'}
-                        isWarning={value?.isStroke || false}
+                        isWarning={accuracy > 0.25 || false}
                     />
                 </>
             )}

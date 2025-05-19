@@ -170,6 +170,7 @@ const HomeScreen = ({ navigation }) => {
             if (success) {
                 const selectedDevice = bluetoothService.getDeviceInfo(deviceId);
                 if (selectedDevice) {
+                    console.log('selectedDevice', selectedDevice);
                     dispatch(
                         setConnectedDevice({
                             id: selectedDevice.id,

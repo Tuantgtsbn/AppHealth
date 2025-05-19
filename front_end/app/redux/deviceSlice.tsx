@@ -9,6 +9,7 @@ import {
     getDocs,
     orderBy,
     query,
+    Timestamp,
     updateDoc,
     where
 } from 'firebase/firestore';
@@ -61,12 +62,13 @@ export const addDevice = createAsyncThunk(
         { rejectWithValue }
     ) => {
         try {
-            const deviceRef = collection(db, 'Devices');
+            console.log('deviceData', deviceData.deviceId);
+            const deviceRef = collection(db, 'LinkedDevices');
             const newDevice = {
                 ...deviceData,
                 userId,
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString()
+                createdAt: Timestamp.now(),
+                updatedAt: Timestamp.now()
             };
             const q = query(
                 deviceRef,
@@ -126,7 +128,7 @@ export const deleteDevice = createAsyncThunk(
     'device/deleteDevice',
     async (deviceId: string, { rejectWithValue }) => {
         try {
-            const deviceRef = doc(db, 'Devices', deviceId);
+            const deviceRef = doc(db, 'LinkedDevices', deviceId);
             await deleteDoc(deviceRef);
             return deviceId;
         } catch (error: any) {

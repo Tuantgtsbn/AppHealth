@@ -94,8 +94,8 @@ export const playAlertSound = async () => {
         );
         currentSound = sound;
 
-        await sound.playAsync();
         sound.setIsLoopingAsync(true); // Lặp lại âm thanh trong 10 giây
+        await sound.playAsync();
 
         // Phát âm thanh trong 10 giây
         currentTimeout = setTimeout(async () => {
@@ -122,12 +122,16 @@ export const playAlertSound = async () => {
 };
 // Thêm hàm để dừng âm thanh cảnh báo nếu cần
 export const stopAlertSound = async () => {
+    isPlayingAlert = false;
+
     if (currentSound) {
         try {
             await currentSound.stopAsync();
             await currentSound.unloadAsync();
         } catch (error) {
             console.error('Lỗi khi dừng âm thanh:', error);
+        } finally {
+            currentSound = null;
         }
     }
 
@@ -135,9 +139,6 @@ export const stopAlertSound = async () => {
         clearTimeout(currentTimeout);
         currentTimeout = null;
     }
-
-    isPlayingAlert = false;
-    currentSound = null;
 };
 // Cấu hình thông báo
 export const configureNotifications = async () => {
