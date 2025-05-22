@@ -367,7 +367,6 @@ const HomeScreen = ({ navigation }) => {
     }, []);
     useEffect(() => {
         if (isConnected && device) {
-            readSensorData();
             // startSensorMonitoring();
         } else {
             stopSensorMonitoring();

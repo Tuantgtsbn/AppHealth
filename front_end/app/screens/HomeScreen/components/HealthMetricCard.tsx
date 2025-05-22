@@ -50,9 +50,9 @@ const HealthMetricCard = ({
                                 >
                                     {value > 0.25 ? 'Có' : 'Không'}
                                 </Text>
-                                <Text className='text-[14px] text-[#666]'>{`(với xác suất ${(
+                                {/* <Text className='text-[14px] text-[#666]'>{`(với xác suất ${(
                                     value * 100
-                                ).toFixed(2)}%)`}</Text>
+                                ).toFixed(2)}%)`}</Text> */}
                             </View>
                         )}
                         <Text className='text-[12px] text-[#666] italic'>
