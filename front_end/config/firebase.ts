@@ -6,7 +6,8 @@ import {
     GoogleAuthProvider,
     FacebookAuthProvider,
     initializeAuth,
-    getAuth
+    getAuth,
+    onAuthStateChanged
 } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
@@ -23,7 +24,25 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
+// Lắng nghe thay đổi trạng thái đăng nhập
+onAuthStateChanged(auth, async (user) => {
+    await saveUserToStorage(user);
+});
 export const googleProvider = new GoogleAuthProvider();
 export const db = getFirestore(app);
 export const facebookProvider = new FacebookAuthProvider();
 export const storage = getStorage(app);
+// Hàm lưu user vào AsyncStorage
+export const saveUserToStorage = async (user: User | null) => {
+    if (user) {
+        await AsyncStorage.setItem('user', JSON.stringify(user));
+    } else {
+        await AsyncStorage.removeItem('user');
+    }
+};
+
+// Hàm lấy user từ AsyncStorage
+export const getUserFromStorage = async (): Promise<User | null> => {
+    const userData = await AsyncStorage.getItem('user');
+    return userData ? JSON.parse(userData) : null;
+};

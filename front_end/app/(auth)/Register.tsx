@@ -23,6 +23,7 @@ import { GoogleAuthProvider } from 'firebase/auth';
 import { useDispatch, useSelector } from 'react-redux';
 import { registerWithEmailPassword } from '@/redux/authSlice';
 import Toast from 'react-native-toast-message';
+import { RootState } from '@/redux/store';
 const schema = yup.object().shape({
     firstName: yup
         .string()
@@ -52,15 +53,7 @@ const RegisterScreen = ({ navigation }) => {
     const [isShowPassword, setIsShowPassword] = useState(false);
     const [isShowConfirmPassword, setIsShowConfirmPassword] = useState(false);
     const dispatch = useDispatch();
-    const { loading } = useSelector((state) => state.auth);
-    const [request, response, promptAsync] = Google.useAuthRequest({
-        expoClientId:
-            '922781130321-due6stlhqo23cnh44blvoi6i3scqp6me.apps.googleusercontent.com',
-        androidClientId:
-            '922781130321-due6stlhqo23cnh44blvoi6i3scqp6me.apps.googleusercontent.com',
-        webClientId:
-            '922781130321-due6stlhqo23cnh44blvoi6i3scqp6me.apps.googleusercontent.com'
-    });
+    const { loading } = useSelector((state: RootState) => state.auth);
     const {
         control,
         handleSubmit,

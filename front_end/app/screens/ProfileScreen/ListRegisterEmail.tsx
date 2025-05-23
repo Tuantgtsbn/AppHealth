@@ -15,9 +15,7 @@ import Toast from 'react-native-toast-message';
 import { checkEmail } from '@/utils/checkEmail';
 export default function ListRegisterEmail() {
     const { loading, emails } = useSelector((state: RootState) => state.email);
-    const { uid: id } = useSelector(
-        (state: RootState) => state.auth?.user || 'jgr8crtfoRSr0ErsJlc75k7g1sl1'
-    );
+    const { uid: id } = useSelector((state: RootState) => state.auth?.user);
     const dispatch = useDispatch();
     useEffect(() => {
         async function fetchEmails() {

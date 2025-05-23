@@ -15,6 +15,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '@/redux/store';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { signOut } from '@/redux/authSlice';
+import Toast from 'react-native-toast-message';
 const ProfileScreen = ({ navigation }) => {
     const dispatch = useDispatch();
     const { loading } = useSelector((state: RootState) => state.auth);
@@ -54,6 +55,11 @@ const ProfileScreen = ({ navigation }) => {
             await dispatch(signOut()).unwrap();
             navigation.replace('Auth');
         } catch (error) {
+            Toast.show({
+                type: 'error',
+                text1: 'Thất bại',
+                text2: 'Đăng xuất không thành công'
+            });
             console.log(error);
         }
     };

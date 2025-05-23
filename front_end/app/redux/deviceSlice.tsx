@@ -9,6 +9,7 @@ import {
     getDocs,
     orderBy,
     query,
+    serverTimestamp,
     Timestamp,
     updateDoc,
     where
@@ -67,8 +68,8 @@ export const addDevice = createAsyncThunk(
             const newDevice = {
                 ...deviceData,
                 userId,
-                createdAt: Timestamp.now(),
-                updatedAt: Timestamp.now()
+                createdAt: Timestamp.now()
+                // updatedAt: serverTimestamp()
             };
             const q = query(
                 deviceRef,
@@ -111,7 +112,7 @@ export const updateDevice = createAsyncThunk(
             }
             await updateDoc(deviceRef, {
                 ...updateValues,
-                updatedAt: new Date().toISOString()
+                updatedAt: Timestamp.now()
             });
             const updatedDeviceDoc = await getDoc(deviceRef);
             const updatedDeviceData = updatedDeviceDoc.data();

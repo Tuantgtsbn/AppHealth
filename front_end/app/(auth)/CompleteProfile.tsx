@@ -15,10 +15,14 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view
 import { firstCompleteUserProfile } from '@/redux/userSlice';
 import { useDispatch, useSelector } from 'react-redux';
 import Toast from 'react-native-toast-message';
+import { RootState } from '@/redux/store';
 
 export default function CompleteProfile({ navigation }) {
     const dispatch = useDispatch();
-    const { uid: id } = useSelector((state) => state?.auth?.user);
+    const { isAuthenticated, user } = useSelector(
+        (state: RootState) => state.auth
+    );
+    const id = user?.uid;
     // State cho gender dropdown
     const [open, setOpen] = useState(false);
     const [gender, setGender] = useState(null);
