@@ -75,8 +75,7 @@ const MonthlyChartScreen = () => {
         try {
             setLoading(true);
 
-            const userId =
-                auth.currentUser?.uid || 'jgr8crtfoRSr0ErsJlc75k7g1sl1';
+            const userId = auth.currentUser?.uid;
             if (!userId) {
                 console.error('Người dùng chưa đăng nhập');
                 setLoading(false);

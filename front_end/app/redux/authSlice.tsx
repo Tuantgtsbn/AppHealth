@@ -1,9 +1,11 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { AuthService } from '@services/auth.service';
 import { GoogleAuthProvider, UserCredential } from 'firebase/auth';
-
+type User = {
+    uid: string;
+};
 interface AuthState {
-    user: object | null;
+    user: User | null;
     token: string | null;
     isAuthenticated: boolean;
     loading: boolean;
@@ -21,22 +23,17 @@ const initialState: AuthState = {
     providerId: null,
     methodSigin: null
 };
-const serializeUser = (user: UserCredential['user']) => ({
-    uid: user.uid,
-    email: user.email,
-    displayName: user.displayName,
-    photoURL: user.photoURL,
-    emailVerified: user.emailVerified,
-    phoneNumber: user.phoneNumber,
-    providerId: user.providerId
+const serializeUser = (user: UserCredential['user']): User => ({
+    uid: user.uid
 });
 // Async thunk for Google Sign In
 export const signInWithGoogle = createAsyncThunk(
     'auth/signInWithGoogle',
     async (credential: any, { rejectWithValue }) => {
         try {
-            const userCredential =
-                await AuthService.signInWithGoogleCredential(credential);
+            const userCredential = await AuthService.signInWithGoogleCredential(
+                credential
+            );
             return {
                 user: userCredential.user,
                 token: await userCredential.user.getIdToken()
@@ -55,8 +52,9 @@ export const signInWithEmailPassword = createAsyncThunk(
         { rejectWithValue }
     ) => {
         try {
-            const userCredential =
-                await AuthService.signInWithEmailAndPassword(credentials);
+            const userCredential = await AuthService.signInWithEmailAndPassword(
+                credentials
+            );
             console.log(userCredential);
             return {
                 user: serializeUser(userCredential.user),
@@ -112,16 +110,24 @@ const authSlice = createSlice({
     initialState,
     reducers: {
         setCredentials: (state, action) => {
-            const { user, token } = action.payload;
-            state.user = user;
-            state.token = token;
+            state.user = {
+                uid: action.payload.user.uid
+            };
+            state.token = action.payload.token;
             state.isAuthenticated = true;
+            state.error = null;
+            state.methodSigin = action.payload.methodSigin;
+            state.providerId = action.payload.providerId;
+            state.loading = false;
         },
         clearCredentials: (state) => {
             state.user = null;
             state.token = null;
             state.isAuthenticated = false;
             state.error = null;
+            state.methodSigin = null;
+            state.providerId = null;
+            state.loading = false;
         }
     },
     extraReducers: (builder) => {
@@ -193,6 +199,7 @@ const authSlice = createSlice({
                 state.isAuthenticated = false;
                 state.error = null;
                 state.methodSigin = null;
+                state.providerId = null;
                 state.loading = false;
             })
             .addCase(signOut.rejected, (state, action) => {

@@ -48,9 +48,7 @@ export default memo(function SectionHealthInfo({
     const [latestData, setLatestData] = useState(null);
     const fetchLatestSensorData = async () => {
         console.log('fetch tai section health info');
-        const result = await getLatestSensorData(
-            auth.currentUser.uid || 'jgr8crtfoRSr0ErsJlc75k7g1sl1'
-        );
+        const result = await getLatestSensorData(auth.currentUser.uid);
         if (result) {
             setLatestData(result);
         }

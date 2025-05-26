@@ -50,9 +50,7 @@ export default function EditProfile({ navigation }) {
         avatar
     } = useSelector((state: RootState) => state.user.detailUser);
     console.log(nameDisplay, email, phone, height, weight, gender, dateOfBirth);
-    const { uid: id } = useSelector(
-        (state: RootState) => state.auth?.user || 'jgr8crtfoRSr0ErsJlc75k7g1sl1'
-    );
+    const { uid: id } = useSelector((state: RootState) => state.auth?.user);
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState<FormDataType>({
         nameDisplay,

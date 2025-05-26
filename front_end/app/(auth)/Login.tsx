@@ -18,6 +18,7 @@ import * as yup from 'yup';
 import { Controller, useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import Toast from 'react-native-toast-message';
+import { RootState } from '@/redux/store';
 const schema = yup.object().shape({
     email: yup
         .string()
@@ -34,7 +35,7 @@ const LoginScreen = ({ navigation }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isShowPassword, setIsShowPassword] = useState(false);
-    const { loading } = useSelector((state) => state.auth);
+    const { loading } = useSelector((state: RootState) => state.auth);
     console.log(navigation);
     const {
         control,

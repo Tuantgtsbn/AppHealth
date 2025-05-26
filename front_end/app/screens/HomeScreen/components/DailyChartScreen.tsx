@@ -55,8 +55,7 @@ const DailyChartScreen = () => {
         try {
             setLoading(true);
 
-            const userId =
-                auth?.currentUser?.uid || 'jgr8crtfoRSr0ErsJlc75k7g1sl1';
+            const userId = auth?.currentUser?.uid;
             const startOfDay = date.clone().startOf('day').toDate();
             const endOfDay = date.clone().endOf('day').toDate();
             console.log(startOfDay, endOfDay);

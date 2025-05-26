@@ -9,7 +9,13 @@ import {
 } from 'firebase/auth';
 import { auth, facebookProvider, db } from '@config/firebase';
 import { User, RegisterCredentials } from '@types/user.types';
-import { doc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
+import {
+    doc,
+    setDoc,
+    serverTimestamp,
+    getDoc,
+    Timestamp
+} from 'firebase/firestore';
 import * as WebBrowser from 'expo-web-browser';
 WebBrowser.maybeCompleteAuthSession();
 export class AuthService {
@@ -35,8 +41,8 @@ export class AuthService {
                     has_hypertension: false,
                     has_diabetes: false,
                     avatar: '',
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString()
+                    created_at: serverTimestamp() as Timestamp,
+                    updated_at: serverTimestamp() as Timestamp
                 },
                 { merge: true }
             );
